@@ -10,10 +10,16 @@ class CapabilitySeeder
     {
         $user->capabilities()->delete();
 
-        foreach ($user->rol->defaultCapabilities() as $capability) {
-            $user->capabilities()->create([
-                'capability' => $capability,
-            ]);
+        $rows = collect($user->rol->defaultCapabilities())
+            ->map(fn ($capability) => [
+                'user_id' => $user->id,
+                'capability' => $capability->value,
+                'created_at' => now(),
+            ])
+            ->all();
+
+        if ($rows !== []) {
+            $user->capabilities()->insert($rows);
         }
     }
 }

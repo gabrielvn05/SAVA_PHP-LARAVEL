@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -25,9 +26,9 @@ return new class extends Migration
             $table->text('observaciones_decano')->nullable();
             $table->timestamp('fecha_firma')->nullable();
             $table->timestamps();
-
-            $table->check('fecha_fin >= fecha_inicio');
         });
+
+        DB::statement('ALTER TABLE solicitudes ADD CONSTRAINT solicitudes_fecha_check CHECK (fecha_fin >= fecha_inicio)');
     }
 
     public function down(): void
