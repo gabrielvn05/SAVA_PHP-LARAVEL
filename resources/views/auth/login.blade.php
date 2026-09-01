@@ -15,7 +15,7 @@
             <div>
                 <h2 style="margin: 0; font-size: 1.35rem;">Iniciar sesión</h2>
                 <p class="field-hint" style="margin: 0.4rem 0 0;">
-                    Usa el correo y contraseña que te asignó el sistema o tu unidad.
+                    Entra con Microsoft 365 para usar tu nombre y correo institucional, o usa la contraseña que te asignó el sistema.
                 </p>
             </div>
 
@@ -40,6 +40,9 @@
             <a href="{{ route('auth.microsoft') }}" class="btn btn--secondary" style="width: 100%;" onclick="document.body.insertAdjacentHTML('beforeend', '<div class=\'loading-overlay\'><div class=\'loading-overlay__panel\'><div class=\'loading-overlay__spinner\'></div><span>Conectando con Microsoft 365…</span></div></div>')">
                 Ingresar con Microsoft 365
             </a>
+            <p class="field-hint" style="margin: -0.35rem 0 0;">
+                SAVA toma tu nombre y correo de la cuenta institucional. Para usar otra, cierra sesión y en Microsoft elige “Usar otra cuenta”.
+            </p>
 
             <form method="POST" action="{{ route('login') }}" class="stack" aria-label="Inicio de sesión con correo y contraseña" data-loading-label="Iniciando sesión…">
                 @csrf

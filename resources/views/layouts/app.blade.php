@@ -49,13 +49,15 @@
                 </div>
             </div>
             <div class="topbar__user">
-                <div class="topbar__user-meta">
-                    <span class="topbar__user-name">{{ $usuario->nombreCompleto() }}</span>
-                    <span class="topbar__user-email">{{ $usuario->email }}</span>
-                    @if($mostrarPill)
-                        <span class="topbar__pill">{{ $usuario->rol->label() }}</span>
-                    @endif
-                </div>
+                <a href="{{ route('perfil.edit') }}" class="topbar__user-link" title="Perfil y configuración">
+                    <div class="topbar__user-meta">
+                        <span class="topbar__user-name">{{ $usuario->nombreCompleto() }}</span>
+                        <span class="topbar__user-email">{{ $usuario->email }}</span>
+                        @if($mostrarPill)
+                            <span class="topbar__pill">{{ $usuario->rol->label() }}</span>
+                        @endif
+                    </div>
+                </a>
             </div>
         </header>
 
@@ -91,6 +93,7 @@
                 </nav>
 
                 <div class="sidebar-panel__footer">
+                    <a href="{{ route('perfil.edit') }}" class="sidebar-panel__profile {{ request()->routeIs('perfil.*') ? 'is-active' : '' }}">Perfil y configuración</a>
                     <button class="sidebar-panel__logout" type="button" data-logout-open>Cerrar sesión</button>
                 </div>
             </aside>
@@ -132,6 +135,31 @@
             </div>
         </div>
     </div>
+
+    @if(request()->routeIs('perfil.completar'))
+        <div class="profile-modal" data-profile-modal role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+            <div class="profile-modal__backdrop" aria-hidden="true"></div>
+            <div class="profile-modal__panel">
+                <h2 id="profile-modal-title" class="profile-modal__title">Actualiza tus datos</h2>
+                <p class="profile-modal__text">
+                    Microsoft 365 no envía cédula ni carrera. Completa estos datos para continuar.
+                    Luego podrás cambiarlos en <strong>Perfil y configuración</strong>.
+                </p>
+                @if($errors->any())
+                    <div class="alert alert--error" role="alert">{{ $errors->first() }}</div>
+                @endif
+                <form method="POST" action="{{ route('perfil.update') }}" class="stack" data-loading-label="Guardando datos…">
+                    @csrf
+                    @method('PUT')
+                    @include('perfil._campos', ['user' => $usuario, 'carreras' => \App\Support\Carreras::OPCIONES])
+                    <div class="profile-modal__actions">
+                        <button type="button" class="btn btn--ghost" data-logout-open>Cerrar sesión</button>
+                        <button type="submit" class="btn btn--primary">Guardar y continuar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     <div class="logout-modal" hidden data-logout-modal role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
         <button type="button" class="logout-modal__backdrop" aria-label="Cerrar" data-logout-close></button>

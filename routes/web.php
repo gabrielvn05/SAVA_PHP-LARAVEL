@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\MicrosoftAuthController;
 use App\Http\Controllers\Auth\PasswordChangeController;
 use App\Http\Controllers\CertificadoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\SolicitarCuentaController;
 use App\Http\Controllers\SolicitudController;
@@ -28,6 +29,10 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware(['auth', 'active'])->group(function (): void {
     Route::get('/cambiar-clave', [PasswordChangeController::class, 'edit'])->name('cambiar-clave.edit');
     Route::put('/cambiar-clave', [PasswordChangeController::class, 'update'])->name('cambiar-clave.update');
+
+    Route::get('/perfil/completar', [PerfilController::class, 'completar'])->name('perfil.completar');
+    Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
+    Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [MicrosoftAuthController::class, 'logout'])->name('logout');

@@ -60,6 +60,7 @@ class TestUsersSeeder extends Seeder
                     'rol' => $data['rol'],
                     'activo' => true,
                     'cedula' => $data['cedula'] ?? '',
+                    'celular' => $data['celular'] ?? '0990000000',
                     'carrera' => $data['carrera'] ?? 'software',
                     'jornada' => '',
                     'password' => $password,

@@ -341,10 +341,45 @@ html.sidebar-open {
   font-weight: 700;
 }
 
+.topbar__user-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.topbar__user-link:hover {
+  text-decoration: none;
+}
+
+.topbar__user-link:hover .topbar__user-name {
+  color: var(--color-primary);
+}
+
 .sidebar-panel__footer {
   margin-top: auto;
   padding: 1rem 0.85rem 1.15rem;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sidebar-panel__profile {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: left;
+}
+
+.sidebar-panel__profile:hover,
+.sidebar-panel__profile.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
 }
 
 .sidebar-panel__logout {
@@ -462,7 +497,7 @@ html.sidebar-open {
 .logout-modal {
   position: fixed;
   inset: 0;
-  z-index: 1250;
+  z-index: 1260;
   display: none;
   place-items: center;
   padding: 1.25rem;
@@ -517,6 +552,55 @@ html.sidebar-open {
 
 .logout-modal__panel.emergent-prompt {
   max-width: 28rem;
+}
+
+.profile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1240;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.profile-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 35, 50, 0.5);
+}
+
+.profile-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 26rem;
+  padding: 1.35rem 1.5rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 48px rgba(26, 35, 50, 0.18);
+}
+
+.profile-modal__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.profile-modal__text {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.profile-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
 }
 
 .emergent-alert--error {

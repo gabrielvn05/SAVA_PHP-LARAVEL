@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePasswordChanged;
+use App\Http\Middleware\EnsureProfileComplete;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->append(SecurityHeaders::class);
         $middleware->appendToGroup('web', EnsurePasswordChanged::class);
+        $middleware->appendToGroup('web', EnsureProfileComplete::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

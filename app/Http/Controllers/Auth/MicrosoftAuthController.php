@@ -2,89 +2,69 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\AppRole;
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\MicrosoftAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
+use Throwable;
 
 class MicrosoftAuthController extends Controller
 {
+    public function __construct(private readonly MicrosoftAccountService $accounts) {}
+
     public function redirect(): RedirectResponse
     {
         return Socialite::driver('azure')
             ->scopes(['openid', 'profile', 'email', 'User.Read'])
+            ->with(['prompt' => 'select_account'])
             ->redirect();
     }
 
     public function callback(): RedirectResponse
     {
-        $azureUser = Socialite::driver('azure')->user();
+        try {
+            $azureUser = Socialite::driver('azure')->user();
+        } catch (Throwable $e) {
+            Log::warning('Fallo OAuth Microsoft 365', ['error' => $e->getMessage()]);
 
-        $email = strtolower($azureUser->getEmail() ?? '');
-
-        if ($email === '') {
             return redirect()->route('login')
-                ->with('error', 'No se pudo obtener el correo institucional de Office 365.');
+                ->with('error', 'No se pudo completar el inicio de sesión con Microsoft 365. Intenta de nuevo.');
         }
 
-        $user = User::query()->where('email', $email)->first();
+        $result = $this->accounts->findOrCreateFromAzure($azureUser);
 
-        if (! $user) {
-            return redirect()->route('login')
-                ->with('error', 'No tienes una cuenta registrada en SAVA. Solicita acceso al Decano.');
+        if (! $result['ok']) {
+            return redirect()->route('login')->with('error', $result['error']);
         }
 
-        if (! $user->activo) {
-            return redirect()->route('login')
-                ->with('error', 'Tu cuenta está inactiva. Contacta al Decano.');
+        Auth::login($result['user'], remember: true);
+
+        if ($result['user']->needsProfileCompletion()) {
+            return redirect()->route('perfil.completar');
         }
-
-        $user->update([
-            'microsoft_id' => $azureUser->getId(),
-            'email_verified_at' => now(),
-            'nombres' => $this->extractFirstName($azureUser),
-            'apellidos' => $this->extractLastName($azureUser),
-        ]);
-
-        Auth::login($user, remember: true);
 
         return redirect()->intended(route('dashboard'));
     }
 
     public function logout(): RedirectResponse
     {
+        $cerrarSesionMicrosoft = filled(Auth::user()?->microsoft_id);
+
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
+        if ($cerrarSesionMicrosoft) {
+            $tenant = config('services.azure.tenant') ?: 'common';
+            $logout = 'https://login.microsoftonline.com/'.$tenant.'/oauth2/v2.0/logout';
+
+            return redirect()->away($logout.'?'.http_build_query([
+                'post_logout_redirect_uri' => route('login'),
+            ]));
+        }
+
         return redirect()->route('login');
-    }
-
-    private function extractFirstName(object $azureUser): string
-    {
-        $name = trim((string) ($azureUser->user['givenName'] ?? $azureUser->getName() ?? ''));
-        if ($name !== '') {
-            return Str::before($name, ' ') ?: $name;
-        }
-
-        return Str::before($azureUser->getEmail(), '@');
-    }
-
-    private function extractLastName(object $azureUser): string
-    {
-        $surname = trim((string) ($azureUser->user['surname'] ?? ''));
-        if ($surname !== '') {
-            return $surname;
-        }
-
-        $full = trim((string) $azureUser->getName());
-        if ($full !== '') {
-            return Str::after($full, ' ') ?: 'Pendiente';
-        }
-
-        return 'Pendiente';
     }
 }

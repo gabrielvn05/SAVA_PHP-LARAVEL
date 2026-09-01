@@ -28,7 +28,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement('ALTER TABLE solicitudes ADD CONSTRAINT solicitudes_fecha_check CHECK (fecha_fin >= fecha_inicio)');
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE solicitudes ADD CONSTRAINT solicitudes_fecha_check CHECK (fecha_fin >= fecha_inicio)');
+        }
     }
 
     public function down(): void

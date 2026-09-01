@@ -68,7 +68,8 @@ function initSidebar() {
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape') return;
+        if ($event.key !== 'Escape') return;
+        if (document.querySelector('[data-profile-modal]')) return;
         if (modal && !modal.hidden) setLogout(false);
         else setOpen(false);
     });

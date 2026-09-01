@@ -28,6 +28,10 @@ return [
         'client_secret' => env('AZURE_CLIENT_SECRET'),
         'redirect' => env('AZURE_REDIRECT_URI'),
         'tenant' => env('AZURE_TENANT_ID', 'common'),
+        'allowed_domains' => array_values(array_filter(array_map(
+            static fn (string $domain) => strtolower(trim($domain)),
+            explode(',', (string) env('AZURE_ALLOWED_DOMAINS', 'uleam.edu.ec,live.uleam.edu.ec')),
+        ))),
     ],
 
 ];

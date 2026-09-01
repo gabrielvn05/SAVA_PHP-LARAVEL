@@ -104,4 +104,15 @@ class User extends Authenticatable
             AppRole::Mantenimiento,
         ], true);
     }
+
+    public function needsProfileCompletion(): bool
+    {
+        if ($this->rol === AppRole::Superusuario) {
+            return false;
+        }
+
+        return trim((string) $this->cedula) === ''
+            || trim((string) $this->carrera) === ''
+            || trim((string) $this->celular) === '';
+    }
 }

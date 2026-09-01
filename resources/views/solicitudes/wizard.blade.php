@@ -77,7 +77,9 @@
                 </article>
             @else
                 <div class="alert alert--warning" role="alert">
-                    Completa tu cédula y carrera en el perfil antes de crear solicitudes.
+                    Completa tu cédula y carrera en
+                    <a href="{{ route('perfil.edit') }}" style="font-weight: 700;">Perfil y configuración</a>
+                    antes de crear solicitudes.
                 </div>
             @endif
 
