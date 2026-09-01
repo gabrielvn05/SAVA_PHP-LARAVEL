@@ -6,31 +6,87 @@
 <div class="login-page">
     <aside class="login-hero">
         <span class="login-hero__badge">Acceso institucional</span>
-        <h1>Sistema de Asistencia y Validaciones Académicas (SAVA)</h1>
+        <img src="{{ asset('branding/LOGO-ULEAM-HORIZONTAL.png') }}" alt="ULEAM" style="max-width: 450px; width: 100%; height: auto;">
+        <h1> Sistema de Asistencia y Validaciones Académicas (SAVA)</h1>
         <p>Gestión de permisos y justificaciones</p>
     </aside>
     <div class="login-panel">
-        <div class="card stack login-card">
+        <div class="card stack login-card" id="contenido-principal" tabindex="-1">
             <div>
                 <h2 style="margin: 0; font-size: 1.35rem;">Iniciar sesión</h2>
                 <p class="field-hint" style="margin: 0.4rem 0 0;">
-                    Usa tu cuenta institucional de Office 365.
+                    Usa el correo y contraseña que te asignó el sistema o tu unidad.
                 </p>
             </div>
 
-            @if(session('error'))
+            @if($errors->any())
+                <div class="alert alert--error" role="alert">{{ $errors->first() }}</div>
+            @elseif(session('error'))
                 <div class="alert alert--error" role="alert">{{ session('error') }}</div>
+            @endif
+
+            @if(request('oauth') === 'error')
+                <div class="alert alert--error" role="alert">
+                    No se pudo iniciar sesión con Microsoft 365. Intenta de nuevo o contacta al administrador.
+                </div>
             @endif
 
             @if(request('solicitud') === 'ok')
                 <div class="alert alert--warning" role="status">
-                    Solicitud enviada. El Decano revisará tu pedido; cuando sea aprobado podrás iniciar sesión con Office 365.
+                    Solicitud enviada. El Decano revisará tu pedido; cuando sea aprobado podrás iniciar sesión con el correo indicado.
                 </div>
             @endif
 
-            <a href="{{ route('auth.microsoft') }}" class="btn btn--microsoft">
-                Iniciar sesión con Microsoft 365
+            <a href="{{ route('auth.microsoft') }}" class="btn btn--secondary" style="width: 100%;" onclick="document.body.insertAdjacentHTML('beforeend', '<div class=\'loading-overlay\'><div class=\'loading-overlay__panel\'><div class=\'loading-overlay__spinner\'></div><span>Conectando con Microsoft 365…</span></div></div>')">
+                Ingresar con Microsoft 365
             </a>
+
+            <form method="POST" action="{{ route('login') }}" class="stack" aria-label="Inicio de sesión con correo y contraseña" data-loading-label="Iniciando sesión…">
+                @csrf
+
+                <div>
+                    <label for="email">Correo institucional</label>
+                    <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        value="{{ old('email') }}"
+                        placeholder="usuario@institucion.edu"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div>
+                    <label for="password">Contraseña</label>
+                    <div class="password-input-wrap">
+                        <input
+                            id="password"
+                            type="password"
+                            name="password"
+                            class="password-input-wrap__input"
+                            placeholder="••••••••"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="password-input-wrap__toggle" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false" aria-controls="password">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.75"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <label class="field" style="flex-direction: row; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="remember" value="1" {{ old('remember') ? 'checked' : '' }} style="width: auto;">
+                    <span class="field-hint" style="margin: 0;">Recordarme en este equipo</span>
+                </label>
+
+                <button type="submit" class="btn btn--primary" style="width: 100%;">
+                    Entrar al sistema
+                </button>
+            </form>
 
             <div class="login-signup-cta">
                 <p class="login-signup-cta__label">¿No tienes cuenta todavía?</p>

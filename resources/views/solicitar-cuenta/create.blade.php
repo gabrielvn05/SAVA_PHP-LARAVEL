@@ -20,6 +20,7 @@
 <div class="login-page">
     <aside class="login-hero">
         <span class="login-hero__badge">Acceso institucional</span>
+        <img src="{{ asset('branding/LOGO-ULEAM-HORIZONTAL.png') }}" alt="ULEAM" style="max-width: 450px; width: 100%; height: auto;">
         <h1>Solicitar cuenta</h1>
         <p>Si trabajas con la facultad y aún no tienes acceso, envía tu solicitud. El Decanato la revisará.</p>
     </aside>
@@ -83,7 +84,10 @@
                         </select>
                     </label>
                 </div>
-                <button type="submit" class="btn btn--primary">Enviar solicitud</button>
+                <div class="row" style="gap: 8px; flex-wrap: wrap;">
+                    <button type="submit" class="btn btn--primary">Enviar solicitud</button>
+                    <a href="{{ route('login') }}" class="btn btn--secondary">Volver al login</a>
+                </div>
             </form>
         </div>
     </div>

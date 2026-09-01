@@ -32,9 +32,11 @@ class User extends Authenticatable
         'carrera',
         'jornada',
         'email_verified_at',
+        'force_password_change',
     ];
 
     protected $hidden = [
+        'password',
         'remember_token',
     ];
 
@@ -44,6 +46,8 @@ class User extends Authenticatable
             'rol' => AppRole::class,
             'activo' => 'boolean',
             'email_verified_at' => 'datetime',
+            'force_password_change' => 'boolean',
+            'password' => 'hashed',
         ];
     }
 

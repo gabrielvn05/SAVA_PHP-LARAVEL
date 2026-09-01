@@ -5,9 +5,39 @@
 @section('content')
 <section class="stack">
     <header class="page-header">
-        <h1>Proceso de aprobación</h1>
-        <p class="field-hint">Solicitudes pendientes de revisión o firma.</p>
+        <div class="page-header__text">
+            <h1 class="page-header__title">Proceso de aprobación</h1>
+            <p class="page-header__subtitle">Bandeja de revisión y firma. Usa filtros para ver el historial completo.</p>
+        </div>
     </header>
+
+    <article class="card stack">
+        <form method="GET" action="{{ route('solicitudes.proceso') }}" class="filter-bar">
+            <label class="field">
+                <span class="field__label">Estado</span>
+                <select name="estado" class="field__input">
+                    <option value="">Pendientes (default)</option>
+                    @foreach($estados as $estado)
+                        <option value="{{ $estado->value }}" @selected(($filtros['estado'] ?? '') === $estado->value)>{{ $estado->label() }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="field">
+                <span class="field__label">Tipo</span>
+                <select name="tipo" class="field__input">
+                    <option value="">Todos</option>
+                    @foreach($tipos as $tipo)
+                        <option value="{{ $tipo->value }}" @selected(($filtros['tipo'] ?? '') === $tipo->value)>{{ $tipo->label() }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="field">
+                <span class="field__label">Buscar</span>
+                <input type="search" name="q" class="field__input" value="{{ $filtros['q'] ?? '' }}" placeholder="Solicitante o motivo…">
+            </label>
+            <button type="submit" class="btn btn--secondary btn--sm">Filtrar</button>
+        </form>
+    </article>
 
     @forelse($solicitudes as $solicitud)
         <article class="card stack">
@@ -17,6 +47,9 @@
                     <p class="field-hint">
                         {{ $solicitud->fecha_inicio->format('d/m/Y') }} – {{ $solicitud->fecha_fin->format('d/m/Y') }}
                         · <span class="badge {{ $solicitud->estado->badgeClass() }}">{{ $solicitud->estado->label() }}</span>
+                        @if(!empty($solicitud->detalle['codigo_tramite']))
+                            · {{ $solicitud->detalle['codigo_tramite'] }}
+                        @endif
                     </p>
                     <p>{{ $solicitud->motivo }}</p>
                 </div>
@@ -53,7 +86,7 @@
         </article>
     @empty
         <article class="card">
-            <p class="field-hint">No hay solicitudes pendientes.</p>
+            <p class="field-hint">No hay solicitudes con los filtros seleccionados.</p>
         </article>
     @endforelse
 </section>

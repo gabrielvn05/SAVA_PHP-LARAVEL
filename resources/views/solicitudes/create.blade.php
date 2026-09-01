@@ -5,7 +5,11 @@
 @section('content')
 <section class="stack">
     <header class="page-header">
-        <h1>Nueva solicitud</h1>
+        <div class="page-header__text">
+            <h1 class="page-header__title">Nueva solicitud</h1>
+            <p class="page-header__subtitle">Formulario simple. Para el flujo guiado usa el asistente.</p>
+        </div>
+        <a href="{{ route('solicitudes.wizard') }}" class="btn btn--secondary btn--sm">Usar asistente</a>
     </header>
 
     <article class="card stack">

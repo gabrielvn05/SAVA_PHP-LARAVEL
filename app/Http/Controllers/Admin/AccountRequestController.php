@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AccountRequestStatus;
 use App\Enums\AppRole;
 use App\Http\Controllers\Controller;
+use App\Mail\TemporaryPasswordMail;
 use App\Models\AccountRequest;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Support\TemporaryPasswordGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class AccountRequestController extends Controller
@@ -43,38 +47,64 @@ class AccountRequestController extends Controller
             abort(403, 'Solo el Decano puede aprobar solicitudes de cuenta.');
         }
 
-        if (User::query()->where('email', $accountRequest->email)->exists()) {
-            $accountRequest->update([
-                'status' => AccountRequestStatus::Aprobada,
-                'handled_by' => auth()->id(),
-                'handled_at' => now(),
-            ]);
+        $tempPassword = TemporaryPasswordGenerator::generate();
+        $email = strtolower($accountRequest->email);
 
-            return back()->with('success', 'El usuario ya existía; solicitud marcada como aprobada.');
+        try {
+            DB::transaction(function () use ($accountRequest, $tempPassword, $email): void {
+                $existing = User::query()->where('email', $email)->first();
+
+                if ($existing) {
+                    $existing->update([
+                        'password' => $tempPassword,
+                        'force_password_change' => true,
+                        'activo' => true,
+                        'nombres' => $accountRequest->nombres,
+                        'apellidos' => $accountRequest->apellidos,
+                        'rol' => $accountRequest->rol_solicitado,
+                        'cedula' => $accountRequest->cedula,
+                        'celular' => $accountRequest->celular,
+                        'carrera' => $accountRequest->carrera,
+                        'jornada' => $accountRequest->jornada,
+                    ]);
+                    $user = $existing;
+                } else {
+                    $user = User::create([
+                        'email' => $email,
+                        'nombres' => $accountRequest->nombres,
+                        'apellidos' => $accountRequest->apellidos,
+                        'rol' => $accountRequest->rol_solicitado,
+                        'activo' => true,
+                        'cedula' => $accountRequest->cedula,
+                        'celular' => $accountRequest->celular,
+                        'carrera' => $accountRequest->carrera,
+                        'jornada' => $accountRequest->jornada,
+                        'password' => $tempPassword,
+                        'force_password_change' => true,
+                        'email_verified_at' => now(),
+                    ]);
+                    $this->audit->log('INSERT', $user);
+                }
+
+                Mail::to($email)->send(new TemporaryPasswordMail(
+                    fullName: $user->nombreCompleto(),
+                    email: $email,
+                    temporaryPassword: $tempPassword,
+                ));
+
+                $accountRequest->update([
+                    'status' => AccountRequestStatus::Aprobada,
+                    'handled_by' => auth()->id(),
+                    'handled_at' => now(),
+                ]);
+            });
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'No se pudo aprobar la solicitud ni enviar el correo. Verifica la configuración SMTP.');
         }
 
-        $user = User::create([
-            'email' => $accountRequest->email,
-            'nombres' => $accountRequest->nombres,
-            'apellidos' => $accountRequest->apellidos,
-            'rol' => $accountRequest->rol_solicitado,
-            'activo' => true,
-            'cedula' => $accountRequest->cedula,
-            'celular' => $accountRequest->celular,
-            'carrera' => $accountRequest->carrera,
-            'jornada' => $accountRequest->jornada,
-            'email_verified_at' => now(),
-        ]);
-
-        $this->audit->log('INSERT', $user);
-
-        $accountRequest->update([
-            'status' => AccountRequestStatus::Aprobada,
-            'handled_by' => auth()->id(),
-            'handled_at' => now(),
-        ]);
-
-        return back()->with('success', "Usuario {$user->email} creado. Puede iniciar sesión con Office 365.");
+        return back()->with('success', "Cuenta aprobada. Se envió la clave temporal a {$email}.");
     }
 
     public function rechazar(Request $request, AccountRequest $accountRequest): RedirectResponse

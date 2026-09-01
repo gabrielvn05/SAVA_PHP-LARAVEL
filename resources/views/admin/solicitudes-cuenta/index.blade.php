@@ -5,8 +5,10 @@
 @section('content')
 <section class="stack">
     <header class="page-header">
-        <h1>Solicitudes de cuenta</h1>
-        <p class="field-hint">Pendientes: {{ $pendientes }}</p>
+        <div class="page-header__text">
+            <h1 class="page-header__title">Solicitudes de cuenta</h1>
+            <p class="page-header__subtitle">Pendientes: {{ $pendientes }}</p>
+        </div>
     </header>
 
     <article class="card">

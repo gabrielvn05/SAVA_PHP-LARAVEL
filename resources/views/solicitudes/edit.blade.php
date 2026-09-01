@@ -5,7 +5,10 @@
 @section('content')
 <section class="stack">
     <header class="page-header">
-        <h1>Editar solicitud</h1>
+        <div class="page-header__text">
+            <h1 class="page-header__title">Editar solicitud</h1>
+            <p class="page-header__subtitle">Actualiza los datos del trámite en borrador o revisión.</p>
+        </div>
     </header>
 
     <article class="card stack">

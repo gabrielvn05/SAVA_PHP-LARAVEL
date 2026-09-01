@@ -33,6 +33,10 @@ class SolicitudPolicy
             return true;
         }
 
+        if ($solicitud->creado_por === $user->id && $solicitud->estado === SolicitudEstado::EnRevisionSecretaria) {
+            return true;
+        }
+
         return $user->hasCapability(CapabilityType::RevisarSolicitudes)
             || $user->hasCapability(CapabilityType::AprobarSolicitudes);
     }
