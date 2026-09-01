@@ -53,11 +53,18 @@ function initSidebar() {
     function setLogout(open) {
         if (!modal) return;
         modal.hidden = !open;
-        html.classList.toggle('sidebar-open', open || panel?.classList.contains('is-open'));
+        modal.setAttribute('aria-hidden', open ? 'false' : 'true');
     }
-    openBtn?.addEventListener('click', () => setLogout(true));
+    openBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        setLogout(true);
+    });
     modal?.querySelectorAll('[data-logout-close]').forEach((el) => {
-        el.addEventListener('click', () => setLogout(false));
+        el.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setLogout(false);
+        });
     });
 
     document.addEventListener('keydown', (event) => {

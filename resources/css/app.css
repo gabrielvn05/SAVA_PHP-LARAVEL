@@ -463,10 +463,13 @@ html.sidebar-open {
   position: fixed;
   inset: 0;
   z-index: 1250;
-  display: grid;
+  display: none;
   place-items: center;
   padding: 1.25rem;
-  pointer-events: auto;
+}
+
+.logout-modal:not([hidden]) {
+  display: grid;
 }
 
 .logout-modal__backdrop {
@@ -2238,7 +2241,8 @@ button:focus-visible {
 }
 
 .wizard-panel[hidden],
-.wizard-field[hidden] {
+.wizard-field[hidden],
+.logout-modal[hidden] {
   display: none !important;
 }
 
