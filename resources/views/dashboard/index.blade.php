@@ -165,6 +165,11 @@
 
         @if($user->rol === \App\Enums\AppRole::Decano)
             <article class="card dashboard-tile stack" style="border-left-color: var(--color-accent);">
+                <h2 style="margin: 0;">Usuarios</h2>
+                <p class="field-hint">Cambia el rol de docentes, administrativos y Secretaría.</p>
+                <a href="{{ route('admin.usuarios.index') }}" class="btn btn--primary btn--sm" style="width: fit-content;">Gestionar usuarios</a>
+            </article>
+            <article class="card dashboard-tile stack" style="border-left-color: var(--color-accent);">
                 <h2 style="margin: 0;">Solicitudes de cuenta</h2>
                 <p class="field-hint">Pendientes por revisar: {{ $stats['solicitudesCuentaPendientes'] ?? 0 }}</p>
                 <a href="{{ route('admin.solicitudes-cuenta.index') }}" class="btn btn--primary btn--sm" style="width: fit-content;">Revisar solicitudes</a>

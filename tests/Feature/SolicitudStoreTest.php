@@ -38,7 +38,7 @@ class SolicitudStoreTest extends TestCase
         $this->actingAs($user)
             ->get(route('solicitudes.show', $solicitud))
             ->assertOk()
-            ->assertSee('Permiso académico de prueba');
+            ->assertSee('Detalle del trámite');
     }
 
     public function test_another_solicitante_cannot_view_someone_elses_solicitud(): void

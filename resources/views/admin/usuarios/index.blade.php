@@ -54,40 +54,52 @@
                         <th>Nombre</th>
                         <th>Correo</th>
                         <th>Rol</th>
-                        <th>Activo</th>
-                        <th>Capacidades extra</th>
-                        <th>Acciones</th>
+                        <th>Estado</th>
+                        @if($puedeCrear)
+                            <th>Capacidades extra</th>
+                        @endif
+                        <th>Cambiar rol</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($usuarios as $usuario)
+                        @php
+                            $puedeEditar = $puedeCambiarRol
+                                && ! (auth()->user()->rol === \App\Enums\AppRole::Decano && $usuario->rol === \App\Enums\AppRole::Superusuario);
+                        @endphp
                         <tr>
                             <td>{{ $usuario->nombreCompleto() }}</td>
                             <td>{{ $usuario->email }}</td>
                             <td>{{ $usuario->rol->label() }}</td>
-                            <td>{{ $usuario->activo ? 'Sí' : 'No' }}</td>
+                            <td>{{ $usuario->activo ? 'Activo' : 'Inactivo' }}</td>
+                            @if($puedeCrear)
+                                <td>
+                                    @forelse($usuario->capabilities as $cap)
+                                        <span class="badge badge--muted">{{ $cap->capability->label() }}</span>
+                                    @empty
+                                        —
+                                    @endforelse
+                                </td>
+                            @endif
                             <td>
-                                @forelse($usuario->capabilities as $cap)
-                                    <span class="badge badge--muted">{{ $cap->capability->label() }}</span>
-                                @empty
-                                    —
-                                @endforelse
-                            </td>
-                            <td>
-                                <form method="POST" action="{{ route('admin.usuarios.update', $usuario) }}" class="inline-form">
-                                    @csrf
-                                    @method('PATCH')
-                                    <select name="rol" class="field__input field__input--sm">
-                                        @foreach($roles as $rol)
-                                            <option value="{{ $rol->value }}" @selected($usuario->rol === $rol)>{{ $rol->label() }}</option>
-                                        @endforeach
-                                    </select>
-                                    <select name="activo" class="field__input field__input--sm">
-                                        <option value="1" @selected($usuario->activo)>Activo</option>
-                                        <option value="0" @selected(! $usuario->activo)>Inactivo</option>
-                                    </select>
-                                    <button type="submit" class="btn btn--secondary btn--sm">Guardar</button>
-                                </form>
+                                @if($puedeEditar)
+                                    <form method="POST" action="{{ route('admin.usuarios.update', $usuario) }}" class="inline-form">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select name="rol" class="field__input field__input--sm" aria-label="Rol de {{ $usuario->nombreCompleto() }}">
+                                            @foreach($roles as $rol)
+                                                <option value="{{ $rol->value }}" @selected($usuario->rol === $rol)>{{ $rol->label() }}</option>
+                                            @endforeach
+                                        </select>
+                                        <select name="activo" class="field__input field__input--sm" aria-label="Estado de {{ $usuario->nombreCompleto() }}">
+                                            <option value="1" @selected($usuario->activo)>Activo</option>
+                                            <option value="0" @selected(! $usuario->activo)>Inactivo</option>
+                                        </select>
+                                        <button type="submit" class="btn btn--secondary btn--sm">Guardar</button>
+                                    </form>
+                                @else
+                                    <span class="field-hint" style="margin: 0;">Sin cambios</span>
+                                @endif
 
                                 @if($puedeCrear)
                                     <form method="POST" action="{{ route('admin.usuarios.delegate', $usuario) }}" class="inline-form" style="margin-top: 0.5rem;">

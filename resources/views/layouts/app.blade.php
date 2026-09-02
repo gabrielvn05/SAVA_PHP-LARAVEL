@@ -87,6 +87,9 @@
                         @if($puedeProceso)
                             <a href="{{ route('solicitudes.proceso') }}" class="sidebar-nav__link {{ request()->routeIs('solicitudes.proceso') || ($puedeProceso && request()->routeIs('solicitudes.show')) ? 'is-active' : '' }}">Proceso de aprobación</a>
                         @endif
+                        @if($usuario->hasCapability(\App\Enums\CapabilityType::GestionarUsuarios))
+                            <a href="{{ route('admin.usuarios.index') }}" class="sidebar-nav__link {{ request()->routeIs('admin.usuarios.*') ? 'is-active' : '' }}">Usuarios</a>
+                        @endif
                         @if($esSecretaria || $esDecano)
                             <a href="{{ route('reportes.index') }}" class="sidebar-nav__link {{ request()->routeIs('reportes.*') ? 'is-active' : '' }}">Reportes</a>
                             <a href="{{ route('admin.solicitudes-cuenta.index') }}" class="sidebar-nav__link {{ request()->routeIs('admin.solicitudes-cuenta.*') ? 'is-active' : '' }}">Solicitudes de cuenta</a>

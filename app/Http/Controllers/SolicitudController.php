@@ -16,7 +16,6 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SolicitudController extends Controller
@@ -296,11 +295,6 @@ class SolicitudController extends Controller
             ]);
         }
 
-        $creador = $solicitud->creador;
-        $iniciales = Str::upper(
-            Str::substr((string) $creador->nombres, 0, 1).Str::substr((string) $creador->apellidos, 0, 1)
-        );
-
         $user = auth()->user();
         $esStaff = in_array($user->rol, [AppRole::Secretaria, AppRole::Decano, AppRole::Superusuario], true)
             || $user->hasCapability(CapabilityType::RevisarSolicitudes)
@@ -310,7 +304,6 @@ class SolicitudController extends Controller
             'solicitud' => $solicitud,
             'timeline' => SolicitudTimeline::for($solicitud),
             'documentos' => $documentos->all(),
-            'iniciales' => $iniciales,
             'esStaff' => $esStaff,
             'puedeActuarSecretaria' => $user->can('revisar', $solicitud) && $solicitud->creado_por !== $user->id,
             'puedeActuarDecano' => $user->can('aprobar', $solicitud) && $solicitud->creado_por !== $user->id,
