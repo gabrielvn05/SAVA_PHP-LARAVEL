@@ -68,7 +68,7 @@ function initSidebar() {
     });
 
     document.addEventListener('keydown', (event) => {
-        if ($event.key !== 'Escape') return;
+        if (event.key !== 'Escape') return;
         if (document.querySelector('[data-profile-modal]')) return;
         if (modal && !modal.hidden) setLogout(false);
         else setOpen(false);
@@ -159,6 +159,9 @@ function initWizard() {
         if (panelTipo) panelTipo.hidden = step !== 0;
         if (panelDatos) panelDatos.hidden = step !== 1;
         if (progress) progress.classList.toggle('is-done', step >= 1);
+        const top = document.querySelector('.page-header') || document.getElementById('wizard-form');
+        top?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     cards.forEach((card) => {
@@ -179,10 +182,49 @@ function initWizard() {
     }
 }
 
+function initRechazoModal() {
+    const modal = document.querySelector('[data-rechazo-modal]');
+    const openBtn = document.querySelector('[data-rechazo-open]');
+    if (!modal || !openBtn) return;
+
+    function setOpen(open) {
+        modal.hidden = !open;
+        modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+        if (open) {
+            modal.querySelector('textarea')?.focus();
+        }
+    }
+
+    openBtn.addEventListener('click', () => setOpen(true));
+    modal.querySelectorAll('[data-rechazo-close]').forEach((el) => {
+        el.addEventListener('click', (event) => {
+            event.preventDefault();
+            setOpen(false);
+        });
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !modal.hidden) {
+            setOpen(false);
+        }
+    });
+}
+
+function initDocViewers() {
+    document.querySelectorAll('[data-doc-print]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const src = btn.getAttribute('data-doc-print');
+            if (!src) return;
+            window.open(src, '_blank', 'noopener,noreferrer')?.focus();
+        });
+    });
+}
+
 registerPwa();
 document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initPasswordToggles();
     initLoadingForms();
     initWizard();
+    initDocViewers();
+    initRechazoModal();
 });

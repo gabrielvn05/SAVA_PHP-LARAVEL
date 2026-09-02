@@ -12,7 +12,7 @@ class EnsurePasswordChanged
     {
         $user = $request->user();
 
-        if ($user && $user->force_password_change && ! $request->routeIs('cambiar-clave.*', 'logout')) {
+        if ($user && $user->force_password_change && ! $request->routeIs('login', 'login.store', 'auth.microsoft', 'auth.microsoft.callback', 'cambiar-clave.*', 'logout')) {
             return redirect()->route('cambiar-clave.edit');
         }
 

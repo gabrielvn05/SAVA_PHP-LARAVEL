@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppRole;
 use App\Enums\CapabilityType;
 use App\Enums\SolicitudEstado;
 use App\Enums\SolicitudTipo;
 use App\Models\Solicitud;
 use App\Services\AuditService;
+use App\Services\SolicitudNotificacionService;
 use App\Services\SolicitudWorkflowService;
-use App\Support\SolicitudValidator;
+use App\Support\Carreras;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SolicitudProcesoController extends Controller
@@ -19,6 +20,7 @@ class SolicitudProcesoController extends Controller
     public function __construct(
         private readonly SolicitudWorkflowService $workflow,
         private readonly AuditService $audit,
+        private readonly SolicitudNotificacionService $notificaciones,
     ) {
         $this->middleware(function ($request, $next) {
             $user = auth()->user();
@@ -43,30 +45,44 @@ class SolicitudProcesoController extends Controller
             $query->where('tipo', $tipo);
         }
 
-        if ($q = trim($request->string('q')->toString())) {
-            $query->where(function ($sub) use ($q): void {
-                $sub->where('motivo', 'ilike', "%{$q}%")
-                    ->orWhereHas('creador', function ($user) use ($q): void {
-                        $user->where('nombres', 'ilike', "%{$q}%")
-                            ->orWhere('apellidos', 'ilike', "%{$q}%");
-                    });
+        $nombre = trim($request->string('nombre')->toString());
+        if ($nombre !== '') {
+            $like = '%'.mb_strtolower($nombre).'%';
+            $query->whereHas('creador', function ($user) use ($like): void {
+                $user->where(function ($nombre) use ($like): void {
+                    $nombre->whereRaw('LOWER(nombres) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(apellidos) LIKE ?', [$like]);
+                });
             });
         }
 
-        if (! $request->hasAny(['estado', 'tipo', 'q'])) {
-            $query->whereIn('estado', [
-                SolicitudEstado::EnRevisionSecretaria,
-                SolicitudEstado::PendienteAprobacionDecano,
-            ]);
+        $rol = trim($request->string('rol')->toString());
+        if ($rol !== '') {
+            $query->whereHas('creador', fn ($user) => $user->where('rol', $rol));
         }
 
-        $solicitudes = $query->orderByDesc('created_at')->get();
+        $carrera = trim($request->string('carrera')->toString());
+        if ($carrera !== '') {
+            $query->whereHas('creador', fn ($user) => $user->where('carrera', $carrera));
+        }
+
+        if ($desde = $request->string('fecha_desde')->toString()) {
+            $query->whereDate('fecha_inicio', '>=', $desde);
+        }
+
+        if ($hasta = $request->string('fecha_hasta')->toString()) {
+            $query->whereDate('fecha_inicio', '<=', $hasta);
+        }
+
+        $solicitudes = $query->orderByDesc('created_at')->paginate(10)->withQueryString();
 
         return view('solicitudes.proceso', [
             'solicitudes' => $solicitudes,
             'tipos' => SolicitudTipo::cases(),
             'estados' => SolicitudEstado::cases(),
-            'filtros' => $request->only(['estado', 'tipo', 'q']),
+            'carreras' => Carreras::OPCIONES,
+            'roles' => AppRole::cases(),
+            'filtros' => $request->only(['estado', 'tipo', 'nombre', 'rol', 'carrera', 'fecha_desde', 'fecha_hasta']),
         ]);
     }
 
@@ -83,14 +99,20 @@ class SolicitudProcesoController extends Controller
             'observaciones_secretaria' => 'nullable|string|max:5000',
         ]);
 
-        if (! $validated['aprobado'] && blank($validated['observaciones_secretaria'] ?? null)) {
+        $aprobado = $request->boolean('aprobado');
+
+        if ($aprobado && blank($validated['observaciones_secretaria'] ?? null)) {
+            $validated['observaciones_secretaria'] = 'Aprobado en revisión de Secretaría.';
+        }
+
+        if (! $aprobado && blank($validated['observaciones_secretaria'] ?? null)) {
             return back()->with('error', 'Debe indicar el motivo del rechazo.');
         }
 
         $old = $solicitud->toArray();
         $nuevoEstado = $this->workflow->estadoTrasRevisionSecretaria(
             $solicitud->creador->rol,
-            (bool) $validated['aprobado'],
+            $aprobado,
         );
 
         $solicitud->update([
@@ -99,11 +121,20 @@ class SolicitudProcesoController extends Controller
             'observaciones_secretaria' => $validated['observaciones_secretaria'] ?? null,
             'firmado_por' => $nuevoEstado === SolicitudEstado::Aprobada ? auth()->id() : null,
             'fecha_firma' => $nuevoEstado === SolicitudEstado::Aprobada ? now() : null,
+            'observaciones_decano' => $nuevoEstado === SolicitudEstado::Aprobada
+                && $solicitud->creador->rol === AppRole::Decano
+                    ? ($validated['observaciones_secretaria'] ?? null)
+                    : $solicitud->observaciones_decano,
         ]);
 
         $this->audit->log('UPDATE', $solicitud, $old);
 
-        return back()->with('success', 'Revisión registrada.');
+        $mensaje = 'Revisión registrada.';
+        if (in_array($nuevoEstado, [SolicitudEstado::Aprobada, SolicitudEstado::Rechazada], true)) {
+            $mensaje = $this->mensajeResultado($nuevoEstado === SolicitudEstado::Aprobada, $solicitud);
+        }
+
+        return back()->with('success', $mensaje);
     }
 
     public function aprobar(Request $request, Solicitud $solicitud): RedirectResponse
@@ -119,22 +150,39 @@ class SolicitudProcesoController extends Controller
             'observaciones_decano' => 'nullable|string|max:5000',
         ]);
 
-        if (! $validated['aprobado'] && blank($validated['observaciones_decano'] ?? null)) {
+        $aprobado = $request->boolean('aprobado');
+
+        if ($aprobado && blank($validated['observaciones_decano'] ?? null)) {
+            $validated['observaciones_decano'] = 'Aprobado y firmado por Decano.';
+        }
+
+        if (! $aprobado && blank($validated['observaciones_decano'] ?? null)) {
             return back()->with('error', 'Debe indicar el motivo del rechazo.');
         }
 
         $old = $solicitud->toArray();
-        $aprobado = (bool) $validated['aprobado'];
 
         $solicitud->update([
             'estado' => $aprobado ? SolicitudEstado::Aprobada : SolicitudEstado::Rechazada,
             'firmado_por' => auth()->id(),
             'observaciones_decano' => $validated['observaciones_decano'] ?? null,
-            'fecha_firma' => $aprobado ? now() : null,
+            'fecha_firma' => now(),
         ]);
 
         $this->audit->log('UPDATE', $solicitud, $old);
 
-        return back()->with('success', $aprobado ? 'Solicitud aprobada.' : 'Solicitud rechazada.');
+        return back()->with('success', $this->mensajeResultado($aprobado, $solicitud));
+    }
+
+    private function mensajeResultado(bool $aprobado, Solicitud $solicitud): string
+    {
+        $base = $aprobado ? 'Solicitud aprobada.' : 'Solicitud rechazada.';
+        $enviado = $this->notificaciones->enviarResultadoFinal($solicitud->fresh(['creador']));
+
+        if ($enviado) {
+            return $base.' Se notificó al solicitante por correo.';
+        }
+
+        return $base.' No se pudo enviar el correo de notificación.';
     }
 }

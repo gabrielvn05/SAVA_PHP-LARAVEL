@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\MicrosoftAccountService;
+use App\Support\AuthSession;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -39,32 +40,18 @@ class MicrosoftAuthController extends Controller
             return redirect()->route('login')->with('error', $result['error']);
         }
 
-        Auth::login($result['user'], remember: true);
+        AuthSession::login($result['user'], remember: true);
 
-        if ($result['user']->needsProfileCompletion()) {
-            return redirect()->route('perfil.completar');
-        }
-
-        return redirect()->intended(route('dashboard'));
+        return AuthSession::redirectHome($result['user']);
     }
 
     public function logout(): RedirectResponse
     {
-        $cerrarSesionMicrosoft = filled(Auth::user()?->microsoft_id);
-
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        if ($cerrarSesionMicrosoft) {
-            $tenant = config('services.azure.tenant') ?: 'common';
-            $logout = 'https://login.microsoftonline.com/'.$tenant.'/oauth2/v2.0/logout';
-
-            return redirect()->away($logout.'?'.http_build_query([
-                'post_logout_redirect_uri' => route('login'),
-            ]));
-        }
-
-        return redirect()->route('login');
+        return redirect()->route('login')
+            ->with('success', 'Sesión cerrada. Puedes entrar con otra cuenta (Secretaría, Decano o Microsoft 365).');
     }
 }

@@ -23,7 +23,21 @@
                 <div class="alert alert--error" role="alert">{{ $errors->first() }}</div>
             @elseif(session('error'))
                 <div class="alert alert--error" role="alert">{{ session('error') }}</div>
+            @elseif(session('success'))
+                <div class="alert alert--success" role="status">{{ session('success') }}</div>
             @endif
+
+            @auth
+                <div class="alert alert--warning" role="status">
+                    Ahora estás como <strong>{{ auth()->user()->nombreCompleto() }}</strong>
+                    ({{ auth()->user()->email }} · {{ auth()->user()->rol->label() }}).
+                    Si entras con Secretaría o Decano, se cierra esta sesión y se abre la de esa cuenta.
+                </div>
+                <form method="POST" action="{{ route('logout') }}" data-no-loading>
+                    @csrf
+                    <button type="submit" class="btn btn--secondary" style="width: 100%;">Cerrar esta sesión</button>
+                </form>
+            @endauth
 
             @if(request('oauth') === 'error')
                 <div class="alert alert--error" role="alert">

@@ -25,7 +25,8 @@ enum SolicitudEstado: string
     {
         return match ($this) {
             self::EnBorrador => 'badge--muted',
-            self::EnRevisionSecretaria, self::PendienteAprobacionDecano => 'badge--warning',
+            self::EnRevisionSecretaria => 'badge--warning',
+            self::PendienteAprobacionDecano => 'badge--info',
             self::Aprobada => 'badge--success',
             self::Rechazada => 'badge--danger',
         };

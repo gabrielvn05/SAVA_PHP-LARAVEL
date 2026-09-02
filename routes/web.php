@@ -14,14 +14,18 @@ use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\SolicitudProcesoController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('login'));
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
+
+Route::get('/login', [LoginController::class, 'create'])->name('login');
+Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
+Route::get('/auth/microsoft', [MicrosoftAuthController::class, 'redirect'])->name('auth.microsoft');
+Route::get('/auth/microsoft/callback', [MicrosoftAuthController::class, 'callback'])->name('auth.microsoft.callback');
 
 Route::middleware('guest')->group(function (): void {
-    Route::get('/login', [LoginController::class, 'create'])->name('login');
-    Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:5,1');
-    Route::get('/auth/microsoft', [MicrosoftAuthController::class, 'redirect'])->name('auth.microsoft');
-    Route::get('/auth/microsoft/callback', [MicrosoftAuthController::class, 'callback'])->name('auth.microsoft.callback');
-
     Route::get('/solicitar-cuenta', [SolicitarCuentaController::class, 'create'])->name('solicitar-cuenta.create');
     Route::post('/solicitar-cuenta', [SolicitarCuentaController::class, 'store'])->name('solicitar-cuenta.store');
 });
@@ -38,14 +42,15 @@ Route::middleware(['auth', 'active'])->group(function (): void {
     Route::post('/logout', [MicrosoftAuthController::class, 'logout'])->name('logout');
 
     Route::get('/solicitudes/nueva/wizard', [SolicitudController::class, 'wizard'])->name('solicitudes.wizard');
-    Route::resource('solicitudes', SolicitudController::class)->except(['index']);
+    Route::get('/solicitudes/proceso-aprobacion', [SolicitudProcesoController::class, 'index'])
+        ->name('solicitudes.proceso');
     Route::get('/solicitudes', [SolicitudController::class, 'index'])->name('solicitudes.index');
+    Route::resource('solicitudes', SolicitudController::class)
+        ->except(['index'])
+        ->parameters(['solicitudes' => 'solicitud']);
 
     Route::get('/solicitudes/{solicitud}/preview-oficio', [CertificadoController::class, 'preview'])
         ->name('solicitudes.preview-oficio');
-
-    Route::get('/solicitudes/proceso-aprobacion', [SolicitudProcesoController::class, 'index'])
-        ->name('solicitudes.proceso');
     Route::post('/solicitudes/{solicitud}/revisar', [SolicitudProcesoController::class, 'revisar'])
         ->name('solicitudes.revisar');
     Route::post('/solicitudes/{solicitud}/aprobar', [SolicitudProcesoController::class, 'aprobar'])

@@ -5,7 +5,7 @@
     <title>Oficio {{ $codigo }}</title>
     <style>
         @page { size: A4; margin: 20mm 14mm 22mm 28mm; }
-        body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 11pt; color: #111; line-height: 1.45; margin: 0; padding: 1.5rem; }
+        body { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 11pt; color: #111; line-height: 1.45; margin: 0; padding: 24px 28px; min-height: 100vh; background: #fff; }
         .header { position: relative; min-height: 95px; margin-bottom: 18px; }
         .header__logo { position: absolute; left: 0; top: 0; max-width: 210px; max-height: 72px; }
         .header__facultad { position: absolute; right: 0; top: 4px; text-align: right; font-style: italic; font-size: 10pt; }

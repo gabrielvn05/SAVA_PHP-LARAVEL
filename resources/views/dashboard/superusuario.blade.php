@@ -7,7 +7,6 @@
     <header class="page-header">
         <div class="page-header__text">
             <h1 class="page-header__title">Superusuario</h1>
-            <p class="page-header__subtitle">Cuenta de respaldo sin módulos operativos visibles.</p>
         </div>
     </header>
     <article class="card">

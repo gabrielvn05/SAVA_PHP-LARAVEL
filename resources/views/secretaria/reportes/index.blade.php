@@ -7,7 +7,6 @@
     <header class="page-header">
         <div class="page-header__text">
             <h1 class="page-header__title">Reportes de solicitudes</h1>
-            <p class="page-header__subtitle">Filtra y exporta el consolidado institucional ({{ $total }} registros).</p>
         </div>
     </header>
 

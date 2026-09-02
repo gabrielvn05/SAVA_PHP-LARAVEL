@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppRole;
+use App\Enums\CapabilityType;
 use App\Enums\SolicitudEstado;
 use App\Enums\SolicitudTipo;
 use App\Models\Solicitud;
 use App\Services\AuditService;
 use App\Services\SolicitudWorkflowService;
+use App\Support\AdjuntoPreview;
 use App\Support\SolicitudTimeline;
 use App\Support\SolicitudValidator;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SolicitudController extends Controller
@@ -266,14 +270,50 @@ class SolicitudController extends Controller
         $this->authorize('view', $solicitud);
         $solicitud->load(['creador', 'revisor', 'firmante']);
 
-        $justificativoUrl = $solicitud->justificativo_path
-            ? Storage::disk('public')->url($solicitud->justificativo_path)
-            : null;
+        $documentos = collect($solicitud->detalle['anexos'] ?? [])
+            ->map(function (array $anexo): array {
+                $path = $anexo['path'] ?? null;
+                $nombre = $anexo['nombre'] ?? 'Documento';
+
+                return [
+                    'path' => $path,
+                    'nombre' => $nombre,
+                    'url' => $path ? Storage::disk('public')->url($path) : null,
+                    'kind' => AdjuntoPreview::kind($nombre),
+                ];
+            })
+            ->filter(fn (array $anexo): bool => filled($anexo['url']))
+            ->values();
+
+        if ($solicitud->justificativo_path && $documentos->doesntContain(
+            fn (array $anexo): bool => ($anexo['path'] ?? null) === $solicitud->justificativo_path
+        )) {
+            $documentos->prepend([
+                'path' => $solicitud->justificativo_path,
+                'nombre' => $solicitud->justificativo_nombre ?: 'Justificativo',
+                'url' => Storage::disk('public')->url($solicitud->justificativo_path),
+                'kind' => AdjuntoPreview::kind($solicitud->justificativo_nombre),
+            ]);
+        }
+
+        $creador = $solicitud->creador;
+        $iniciales = Str::upper(
+            Str::substr((string) $creador->nombres, 0, 1).Str::substr((string) $creador->apellidos, 0, 1)
+        );
+
+        $user = auth()->user();
+        $esStaff = in_array($user->rol, [AppRole::Secretaria, AppRole::Decano, AppRole::Superusuario], true)
+            || $user->hasCapability(CapabilityType::RevisarSolicitudes)
+            || $user->hasCapability(CapabilityType::AprobarSolicitudes);
 
         return view('solicitudes.show', [
             'solicitud' => $solicitud,
             'timeline' => SolicitudTimeline::for($solicitud),
-            'justificativoUrl' => $justificativoUrl,
+            'documentos' => $documentos->all(),
+            'iniciales' => $iniciales,
+            'esStaff' => $esStaff,
+            'puedeActuarSecretaria' => $user->can('revisar', $solicitud) && $solicitud->creado_por !== $user->id,
+            'puedeActuarDecano' => $user->can('aprobar', $solicitud) && $solicitud->creado_por !== $user->id,
         ]);
     }
 

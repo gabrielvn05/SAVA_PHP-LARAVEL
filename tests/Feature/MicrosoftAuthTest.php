@@ -120,7 +120,7 @@ class MicrosoftAuthTest extends TestCase
         $this->assertSame('luis.mora@uleam.edu.ec', $result['user']->email);
     }
 
-    public function test_logout_after_microsoft_session_signs_out_of_azure(): void
+    public function test_logout_returns_to_login_so_another_account_can_sign_in(): void
     {
         $user = User::factory()->create([
             'email' => 'ana.perez@uleam.edu.ec',
@@ -130,8 +130,8 @@ class MicrosoftAuthTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('logout'))
-            ->assertRedirectContains('login.microsoftonline.com')
-            ->assertRedirectContains('oauth2/v2.0/logout');
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('success');
 
         $this->assertGuest();
     }

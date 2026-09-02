@@ -1495,6 +1495,18 @@ label {
   border-radius: var(--radius-sm);
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .skip-to-main:focus {
   left: 0.75rem;
   top: 0.75rem;
@@ -2116,6 +2128,11 @@ button:focus-visible {
   border-bottom: 1px solid #1f2937;
 }
 
+.doc-viewer__toolbar-left {
+  min-width: 0;
+  flex: 1;
+}
+
 .doc-viewer__title {
   font-size: 0.88rem;
   font-weight: 600;
@@ -2137,6 +2154,7 @@ button:focus-visible {
   justify-content: center;
   width: 2.1rem;
   height: 2.1rem;
+  min-height: 2.1rem;
   border: none;
   border-radius: 6px;
   background: transparent;
@@ -2144,10 +2162,13 @@ button:focus-visible {
   cursor: pointer;
   text-decoration: none;
   font-size: 1rem;
+  padding: 0;
 }
 
 .doc-viewer__tool-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  text-decoration: none;
 }
 
 .doc-viewer__canvas {
@@ -2324,6 +2345,14 @@ button:focus-visible {
   box-shadow: 0 8px 24px rgba(201, 162, 39, 0.2);
 }
 
+.wizard-panel {
+  max-width: 900px;
+}
+
+#panel-tipo.wizard-panel {
+  max-width: none;
+}
+
 .wizard-panel[hidden],
 .wizard-field[hidden],
 .logout-modal[hidden] {
@@ -2363,4 +2392,164 @@ button:focus-visible {
 
 .wizard-progress__step.is-done {
   background: var(--color-success);
+}
+
+.solicitud-ficha {
+  display: grid;
+  gap: 1rem;
+}
+
+.solicitud-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.solicitud-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem 1rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.solicitud-banner__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.solicitud-banner__text {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.solicitud-banner--aprobada {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.solicitud-banner--rechazada {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.solicitud-banner--proceso {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.solicitud-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+}
+
+.solicitud-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--color-primary) 0%, #061f40 100%);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.solicitud-identity__label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.solicitud-identity__name {
+  margin: 0.15rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.solicitud-identity__meta {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  word-break: break-word;
+}
+
+.solicitud-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.ficha-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.ficha-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  margin: 0;
+}
+
+.ficha-item dt {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.ficha-item dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.ficha-item--wide {
+  grid-column: 1 / -1;
+}
+
+.solicitud-docs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.solicitud-docs li {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #f6f8fb;
+}
+
+@media (max-width: 640px) {
+  .solicitud-identity {
+    align-items: flex-start;
+  }
+
+  .solicitud-banner {
+    flex-direction: column;
+  }
 }

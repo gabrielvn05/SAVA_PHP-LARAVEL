@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\AuthSession;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class LoginController extends Controller
 {
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
         return view('auth.login');
     }
@@ -25,7 +25,7 @@ class LoginController extends Controller
         ]);
 
         $email = strtolower($validated['email']);
-        $user = User::query()->where('email', $email)->first();
+        $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
 
         if (
             ! $user
@@ -45,8 +45,8 @@ class LoginController extends Controller
                 ->with('error', 'Tu cuenta está inactiva. Contacta al administrador.');
         }
 
-        Auth::login($user, $request->boolean('remember'));
+        AuthSession::login($user, $request->boolean('remember'));
 
-        return redirect()->intended(route('dashboard'));
+        return AuthSession::redirectHome($user);
     }
 }

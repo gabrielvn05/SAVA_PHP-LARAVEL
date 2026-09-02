@@ -15,7 +15,6 @@
     <header class="page-header">
         <div class="page-header__text">
             <h1 class="page-header__title">Hola, {{ $user->nombres }}</h1>
-            <p class="page-header__subtitle">Panel de {{ strtolower($stats['scopeLabel']) }}: indicadores, porcentajes y accesos rápidos.</p>
         </div>
     </header>
 

@@ -7,7 +7,6 @@
     <header class="page-header">
         <div class="page-header__text">
             <h1 class="page-header__title">Gestión de usuarios</h1>
-            <p class="page-header__subtitle">Alta, roles, estado y delegación de capacidades.</p>
         </div>
     </header>
 

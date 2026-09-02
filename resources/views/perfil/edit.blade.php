@@ -7,7 +7,6 @@
     <header class="page-header">
         <div class="page-header__text">
             <h1 class="page-header__title">Perfil y configuración</h1>
-            <p class="page-header__subtitle">Actualiza tu cédula, carrera y celular. El nombre y el correo provienen de tu cuenta institucional.</p>
         </div>
     </header>
 

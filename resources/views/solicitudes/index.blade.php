@@ -7,7 +7,6 @@
     <header class="page-header">
         <div class="page-header__text">
             <h1 class="page-header__title">Mis solicitudes</h1>
-            <p class="page-header__subtitle">Historial de trámites registrados.</p>
         </div>
         <div class="page-header__actions">
             <a href="{{ route('solicitudes.create') }}" class="btn btn--secondary btn--sm">Formulario simple</a>

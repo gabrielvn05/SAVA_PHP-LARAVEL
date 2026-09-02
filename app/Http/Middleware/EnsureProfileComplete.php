@@ -15,7 +15,16 @@ class EnsureProfileComplete
         if (
             $user
             && $user->needsProfileCompletion()
-            && ! $request->routeIs('perfil.completar', 'perfil.update', 'logout', 'cambiar-clave.*')
+            && ! $request->routeIs(
+                'login',
+                'login.store',
+                'auth.microsoft',
+                'auth.microsoft.callback',
+                'perfil.completar',
+                'perfil.update',
+                'logout',
+                'cambiar-clave.*',
+            )
         ) {
             return redirect()->route('perfil.completar');
         }

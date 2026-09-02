@@ -11,7 +11,6 @@
     <header class="page-header">
         <div class="page-header__text">
             <h1 class="page-header__title">Nueva solicitud</h1>
-            <p class="page-header__subtitle">Flujo guiado: elige el tipo de trámite, completa el formulario y envía tu solicitud a revisión.</p>
         </div>
         <div class="page-header__actions">
             <a href="{{ route('solicitudes.index') }}" class="btn btn--secondary btn--sm">Volver</a>
@@ -28,7 +27,7 @@
         @csrf
         <input type="hidden" name="tipo" id="tipo-input" value="{{ old('tipo') }}" required>
 
-        <article class="card stack" id="panel-tipo">
+        <article class="card stack wizard-panel" id="panel-tipo">
             <h2 style="margin: 0;">Paso 1: Tipo de solicitud</h2>
             <p class="field-hint" style="margin-top: 0;">
                 Selecciona la opción que mejor describa tu caso. Esto define los campos del formulario de la solicitud.
@@ -49,7 +48,7 @@
             </div>
         </article>
 
-        <article class="card stack wizard-panel" id="panel-datos" hidden style="max-width: 900px;">
+        <article class="card stack wizard-panel" id="panel-datos" hidden>
             <h2 style="margin: 0;">Paso 2: Datos del trámite</h2>
             <p class="field-hint" style="margin-top: 0;" id="wizard-tipo-desc">
                 La fecha de inasistencia no puede ser anterior a {{ $minFecha }} (ventana de 3 meses).

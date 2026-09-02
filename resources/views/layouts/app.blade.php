@@ -20,7 +20,9 @@
     $esDecano = $rol === \App\Enums\AppRole::Decano;
     $esSecretaria = $rol === \App\Enums\AppRole::Secretaria;
     $puedeProceso = $esSecretaria || $esDecano;
-    $solicitudesOpen = request()->routeIs('solicitudes.*') && ! request()->routeIs('solicitudes.proceso');
+    $solicitudesOpen = request()->routeIs('solicitudes.*')
+        && ! request()->routeIs('solicitudes.proceso')
+        && ! ($puedeProceso && request()->routeIs('solicitudes.show'));
     $mostrarPill = ! $esSuper;
 @endphp
 <body class="app-shell">
@@ -83,7 +85,7 @@
                         </div>
 
                         @if($puedeProceso)
-                            <a href="{{ route('solicitudes.proceso') }}" class="sidebar-nav__link {{ request()->routeIs('solicitudes.proceso') ? 'is-active' : '' }}">Proceso de aprobación</a>
+                            <a href="{{ route('solicitudes.proceso') }}" class="sidebar-nav__link {{ request()->routeIs('solicitudes.proceso') || ($puedeProceso && request()->routeIs('solicitudes.show')) ? 'is-active' : '' }}">Proceso de aprobación</a>
                         @endif
                         @if($esSecretaria || $esDecano)
                             <a href="{{ route('reportes.index') }}" class="sidebar-nav__link {{ request()->routeIs('reportes.*') ? 'is-active' : '' }}">Reportes</a>
@@ -109,28 +111,6 @@
                         @endif
                         @yield('content')
                     </main>
-                    <footer class="app-footer">
-                        <div class="app-footer__inner">
-                            <section class="app-footer__about">
-                                <h2 class="app-footer__title">Acerca de</h2>
-                                <p class="app-footer__text">
-                                    SAVA (Sistema de Asistencia y Validaciones Académicas) permite gestionar permisos y
-                                    justificaciones institucionales: crear solicitudes, adjuntar certificados, revisar trámites,
-                                    aprobar o rechazar en el flujo Secretaría → Decanato, administrar usuarios y consultar
-                                    indicadores desde el panel principal.
-                                </p>
-                            </section>
-                            <section class="app-footer__credits">
-                                <p class="app-footer__label">Desarrollado por</p>
-                                <ul class="app-footer__developers">
-                                    <li>Anchundia Anchundia Lililiana</li>
-                                    <li>Baque Rodriguez Victor</li>
-                                    <li>Velez Nuñez Gabriel</li>
-                                    <li>Zamora Piguave Miguel</li>
-                                </ul>
-                            </section>
-                        </div>
-                    </footer>
                 </div>
             </div>
         </div>
