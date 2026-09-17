@@ -24,7 +24,7 @@
                 href="{{ $downloadHref }}"
                 class="doc-viewer__tool-btn"
                 title="Descargar"
-                @if(in_array($kind, ['pdf', 'image'], true)) download="{{ $fileName }}" @endif
+                @if(in_array($kind, ['pdf', 'image', 'docx'], true)) download="{{ $fileName }}" @endif
                 target="_blank"
                 rel="noopener"
             >⬇</a>

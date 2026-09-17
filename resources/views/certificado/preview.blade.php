@@ -23,8 +23,8 @@
     <header class="header">
         <img src="{{ $logoFacultad }}" alt="Facultad" class="header__logo">
         <div class="header__facultad">
-            Facultad de Ingeniería en Sistemas,<br>
-            Electrónica y Telecomunicaciones
+            Facultad de Ciencias de la Vida y la Tecnología<br>
+            (FACIVITEC)
         </div>
     </header>
 

@@ -98,9 +98,10 @@
         <h2 class="solicitud-preview__title">Vista previa de la solicitud</h2>
         <x-doc-viewer
             title="Oficio institucional"
-            :file-name="($d['codigo_tramite'] ?? 'oficio').'.pdf'"
-            :src="route('solicitudes.preview-oficio', $solicitud)"
-            kind="html"
+            :file-name="($oficioVistaPdf ?? false) ? (($d['codigo_tramite'] ?? 'oficio').'.pdf') : (($d['codigo_tramite'] ?? 'oficio').'.docx')"
+            :src="$oficioPreviewUrl ?? route('solicitudes.preview-oficio', $solicitud)"
+            :download-href="$oficioDescargarUrl ?? route('solicitudes.preview-oficio', $solicitud)"
+            :kind="($oficioVistaPdf ?? false) ? 'pdf' : (($oficioUsaPlantillaDocx ?? false) ? 'docx' : 'html')"
         />
 
         @foreach($documentos as $documento)

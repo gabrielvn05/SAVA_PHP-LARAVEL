@@ -8,13 +8,18 @@ use App\Enums\SolicitudEstado;
 use App\Enums\SolicitudTipo;
 use App\Models\Solicitud;
 use App\Services\AuditService;
+use App\Services\OficioDocxService;
+use App\Services\OficioPdfService;
 use App\Services\SolicitudWorkflowService;
 use App\Support\AdjuntoPreview;
+use App\Support\SolicitudAdjuntos;
 use App\Support\SolicitudTimeline;
 use App\Support\SolicitudValidator;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -23,6 +28,8 @@ class SolicitudController extends Controller
     public function __construct(
         private readonly SolicitudWorkflowService $workflow,
         private readonly AuditService $audit,
+        private readonly OficioDocxService $oficioDocx,
+        private readonly OficioPdfService $oficioPdf,
     ) {}
 
     public function index(Request $request): View
@@ -189,7 +196,7 @@ class SolicitudController extends Controller
             $anexos[] = ['path' => $path, 'nombre' => $file->getClientOriginalName()];
         }
 
-        $codigo = 'SAVA-'.now()->format('Ymd').'-'.strtoupper(substr(uniqid(), -6));
+        $codigo = \App\Support\OficioCodigo::generar($user, SolicitudTipo::from($tipo));
 
         $institucionTipo = $validated['institucion_medica_tipo'] ?? null;
         $institucionMedica = $institucionTipo === 'IESS'
@@ -270,14 +277,16 @@ class SolicitudController extends Controller
         $solicitud->load(['creador', 'revisor', 'firmante']);
 
         $documentos = collect($solicitud->detalle['anexos'] ?? [])
-            ->map(function (array $anexo): array {
+            ->map(function (array $anexo) use ($solicitud): array {
                 $path = $anexo['path'] ?? null;
                 $nombre = $anexo['nombre'] ?? 'Documento';
 
                 return [
                     'path' => $path,
                     'nombre' => $nombre,
-                    'url' => $path ? Storage::disk('public')->url($path) : null,
+                    'url' => ($path && SolicitudAdjuntos::pathEsValido($path))
+                        ? SolicitudAdjuntos::urlVista($solicitud, $path)
+                        : null,
                     'kind' => AdjuntoPreview::kind($nombre),
                 ];
             })
@@ -287,10 +296,13 @@ class SolicitudController extends Controller
         if ($solicitud->justificativo_path && $documentos->doesntContain(
             fn (array $anexo): bool => ($anexo['path'] ?? null) === $solicitud->justificativo_path
         )) {
+            $justificativoPath = $solicitud->justificativo_path;
             $documentos->prepend([
-                'path' => $solicitud->justificativo_path,
+                'path' => $justificativoPath,
                 'nombre' => $solicitud->justificativo_nombre ?: 'Justificativo',
-                'url' => Storage::disk('public')->url($solicitud->justificativo_path),
+                'url' => SolicitudAdjuntos::pathEsValido($justificativoPath)
+                    ? SolicitudAdjuntos::urlVista($solicitud, $justificativoPath)
+                    : null,
                 'kind' => AdjuntoPreview::kind($solicitud->justificativo_nombre),
             ]);
         }
@@ -300,6 +312,12 @@ class SolicitudController extends Controller
             || $user->hasCapability(CapabilityType::RevisarSolicitudes)
             || $user->hasCapability(CapabilityType::AprobarSolicitudes);
 
+        $oficioUsaPlantillaDocx = $this->oficioDocx->puedeGenerarDocx($solicitud);
+        $oficioPreviewUrl = route('solicitudes.preview-oficio', $solicitud);
+        $oficioDescargarUrl = Route::has('solicitudes.oficio-descargar') && $oficioUsaPlantillaDocx
+            ? route('solicitudes.oficio-descargar', $solicitud)
+            : $oficioPreviewUrl;
+
         return view('solicitudes.show', [
             'solicitud' => $solicitud,
             'timeline' => SolicitudTimeline::for($solicitud),
@@ -307,7 +325,36 @@ class SolicitudController extends Controller
             'esStaff' => $esStaff,
             'puedeActuarSecretaria' => $user->can('revisar', $solicitud) && $solicitud->creado_por !== $user->id,
             'puedeActuarDecano' => $user->can('aprobar', $solicitud) && $solicitud->creado_por !== $user->id,
+            'oficioUsaPlantillaDocx' => $oficioUsaPlantillaDocx,
+            'oficioVistaPdf' => $this->oficioPdf->puedeMostrarPdfEnVisor($solicitud),
+            'oficioPreviewUrl' => $oficioPreviewUrl,
+            'oficioDescargarUrl' => $oficioDescargarUrl,
         ]);
+    }
+
+    public function adjunto(Request $request, Solicitud $solicitud): Response
+    {
+        $this->authorize('view', $solicitud);
+
+        $path = str_replace('\\', '/', trim((string) $request->query('f', '')));
+        if (! SolicitudAdjuntos::perteneceASolicitud($solicitud, $path)) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('public');
+        if (! $disk->exists($path)) {
+            abort(404);
+        }
+
+        $nombre = $solicitud->justificativo_nombre ?: 'adjunto';
+        foreach ($solicitud->detalle['anexos'] ?? [] as $anexo) {
+            if (($anexo['path'] ?? null) === $path) {
+                $nombre = (string) ($anexo['nombre'] ?? $nombre);
+                break;
+            }
+        }
+
+        return $disk->response($path, $nombre);
     }
 
     public function edit(Solicitud $solicitud): View

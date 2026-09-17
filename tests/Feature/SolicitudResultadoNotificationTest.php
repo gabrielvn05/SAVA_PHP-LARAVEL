@@ -29,10 +29,16 @@ class SolicitudResultadoNotificationTest extends TestCase
             ->assertSee('doc-viewer', false)
             ->assertSee(route('solicitudes.preview-oficio', $solicitud), false);
 
-        $this->actingAs($user)
+        $preview = $this->actingAs($user)
             ->get(route('solicitudes.preview-oficio', $solicitud))
-            ->assertOk()
-            ->assertSee('Oficio N.º');
+            ->assertOk();
+
+        $contentType = (string) $preview->headers->get('content-type');
+        if (str_contains($contentType, 'pdf')) {
+            $preview->assertHeader('content-type', 'application/pdf');
+        } else {
+            $preview->assertSee('data-oficio-docx-url', false);
+        }
     }
 
     public function test_decano_approval_emails_the_solicitante(): void

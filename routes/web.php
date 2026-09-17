@@ -45,12 +45,19 @@ Route::middleware(['auth', 'active'])->group(function (): void {
     Route::get('/solicitudes/proceso-aprobacion', [SolicitudProcesoController::class, 'index'])
         ->name('solicitudes.proceso');
     Route::get('/solicitudes', [SolicitudController::class, 'index'])->name('solicitudes.index');
-    Route::resource('solicitudes', SolicitudController::class)
-        ->except(['index'])
-        ->parameters(['solicitudes' => 'solicitud']);
 
     Route::get('/solicitudes/{solicitud}/preview-oficio', [CertificadoController::class, 'preview'])
         ->name('solicitudes.preview-oficio');
+    Route::get('/solicitudes/{solicitud}/oficio/documento', [CertificadoController::class, 'documento'])
+        ->name('solicitudes.oficio-documento');
+    Route::get('/solicitudes/{solicitud}/oficio/descargar', [CertificadoController::class, 'descargar'])
+        ->name('solicitudes.oficio-descargar');
+    Route::get('/solicitudes/{solicitud}/adjunto', [SolicitudController::class, 'adjunto'])
+        ->name('solicitudes.adjunto');
+
+    Route::resource('solicitudes', SolicitudController::class)
+        ->except(['index'])
+        ->parameters(['solicitudes' => 'solicitud']);
     Route::post('/solicitudes/{solicitud}/revisar', [SolicitudProcesoController::class, 'revisar'])
         ->name('solicitudes.revisar');
     Route::post('/solicitudes/{solicitud}/aprobar', [SolicitudProcesoController::class, 'aprobar'])
