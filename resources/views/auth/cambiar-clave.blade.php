@@ -14,7 +14,7 @@
         <div class="card stack login-card" id="contenido-principal" tabindex="-1">
             <div>
                 <h2 style="margin: 0; font-size: 1.35rem;">Nueva contraseña</h2>
-                <p class="field-hint" style="margin: 0.4rem 0 0;">Usa al menos 8 caracteres.</p>
+                <p class="field-hint" style="margin: 0.4rem 0 0;">Mínimo 8 caracteres, con mayúscula, minúscula, número y carácter especial.</p>
             </div>
 
             @if($errors->any())

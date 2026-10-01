@@ -113,7 +113,35 @@ class OficioDocxService
         $buscar = array_keys($valores);
         $reemplazar = array_map(fn (string $v): string => $this->xmlEscape($v), array_values($valores));
 
-        return str_replace($buscar, $reemplazar, $xml);
+        $xml = str_replace($buscar, $reemplazar, $xml);
+
+        return $this->normalizarTablaFirma($xml);
+    }
+
+    /**
+     * Word y docx-preview expanden espacios con justificación; en la fila de datos
+     * de firma eso separa «Correo» e «Institucional:» cuando el correo es largo.
+     */
+    private function normalizarTablaFirma(string $xml): string
+    {
+        if (! str_contains($xml, 'Aprobado por')) {
+            return $xml;
+        }
+
+        $result = preg_replace_callback(
+            '/<w:tbl\b[^>]*>(?:(?!<\/w:tbl>).)*Aprobado por:(?:(?!<\/w:tbl>).)*<\/w:tbl>/su',
+            static function (array $matches): string {
+                return str_replace(
+                    ['<w:jc w:val="both"/>', '<w:jc w:val="distribute"/>'],
+                    '<w:jc w:val="left"/>',
+                    $matches[0],
+                );
+            },
+            $xml,
+            1,
+        );
+
+        return is_string($result) ? $result : $xml;
     }
 
     private function xmlEscape(string $value): string

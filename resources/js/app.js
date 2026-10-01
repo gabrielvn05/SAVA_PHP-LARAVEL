@@ -112,30 +112,103 @@ function initWizard() {
     const continueBtn = document.querySelector('[data-wizard-continue]');
     const backBtn = document.querySelector('[data-wizard-back]');
     const anexoLabel = document.getElementById('anexo-label');
+    const wizardTipoDesc = document.getElementById('wizard-tipo-desc');
     const instTipo = document.getElementById('institucion-medica-tipo');
     if (!cards.length || !tipoInput) return;
+
+    const wizardDescDefault = wizardTipoDesc?.textContent?.trim() || '';
 
     function showFields(tipo) {
         document.querySelectorAll('.wizard-field').forEach((el) => {
             el.hidden = true;
         });
         const map = {
-            enfermedad: ['inasistencia', 'enfermedad', 'motivo'],
-            calamidad_domestica: ['inasistencia', 'calamidad', 'motivo'],
-            viaje: ['viaje', 'motivo'],
-            falta_marcado: ['falta', 'motivo'],
-            permiso: ['fechas', 'permiso', 'motivo'],
-            justificacion: ['fechas', 'motivo'],
+            enfermedad: ['inasistencia', 'enfermedad', 'motivo', 'observaciones'],
+            calamidad_domestica: ['inasistencia', 'calamidad', 'motivo', 'observaciones'],
+            viaje: ['viaje', 'observaciones'],
+            falta_marcado: ['falta', 'falta-motivo', 'observaciones'],
+            permiso: ['permiso', 'permiso-motivo', 'observaciones'],
+            justificacion: ['justificacion-atraso', 'justificacion-motivo', 'observaciones'],
         };
-        (map[tipo] || ['fechas', 'motivo']).forEach((key) => {
+        (map[tipo] || ['fechas', 'motivo', 'observaciones']).forEach((key) => {
             document.querySelectorAll(`.wizard-field--${key}`).forEach((el) => { el.hidden = false; });
         });
+        if (wizardTipoDesc) {
+            wizardTipoDesc.textContent = tipo === 'justificacion'
+                ? 'La justificación por atraso aplica únicamente a la fecha de hoy.'
+                : wizardDescDefault;
+        }
+        syncPermisoMotivoUi();
+        syncJustificacionMotivoUi();
+        syncFaltaMarcadoUi();
         if (anexoLabel) {
             anexoLabel.textContent = tipo === 'enfermedad'
                 ? 'Adjuntar certificado o soporte médico *'
                 : 'Adjuntar documento de respaldo (opcional)';
         }
         syncInstitucionNombre();
+    }
+
+    function syncFaltaMarcadoUi() {
+        const tipoMarcacion = document.getElementById('tipo-marcacion-omitida-select');
+        const ingresoWrap = document.querySelector('.wizard-falta-hora--ingreso');
+        const salidaWrap = document.querySelector('.wizard-falta-hora--salida');
+        const ingresoInput = ingresoWrap?.querySelector('input[name="hora_real_ingreso"]');
+        const salidaInput = salidaWrap?.querySelector('input[name="hora_real_salida"]');
+        const value = tipoMarcacion?.value || '';
+
+        const showIngreso = value === 'entrada' || value === 'entrada_salida';
+        const showSalida = value === 'salida' || value === 'entrada_salida';
+
+        if (ingresoWrap) {
+            ingresoWrap.hidden = !showIngreso;
+        }
+        if (salidaWrap) {
+            salidaWrap.hidden = !showSalida;
+        }
+        if (ingresoInput) {
+            ingresoInput.required = showIngreso;
+            if (!showIngreso) {
+                ingresoInput.value = '';
+            }
+        }
+        if (salidaInput) {
+            salidaInput.required = showSalida;
+            if (!showSalida) {
+                salidaInput.value = '';
+            }
+        }
+
+        const motivoSelect = document.getElementById('motivo-falta-registro-select');
+        const motivoHint = document.getElementById('motivo-falta-registro-hint');
+        if (motivoSelect && motivoHint) {
+            const option = motivoSelect.options[motivoSelect.selectedIndex];
+            motivoHint.textContent = option?.dataset?.hint || '';
+        }
+    }
+
+    function syncJustificacionMotivoUi() {
+        const select = document.getElementById('motivo-atraso-select');
+        const hint = document.getElementById('motivo-atraso-hint');
+        if (!select || !hint) {
+            return;
+        }
+        const option = select.options[select.selectedIndex];
+        hint.textContent = option?.dataset?.hint || '';
+    }
+
+    function syncPermisoMotivoUi() {
+        const select = document.getElementById('motivo-permiso-select');
+        const hint = document.getElementById('motivo-permiso-hint');
+        const otroWrap = document.querySelector('.wizard-field--permiso-motivo-otro');
+        if (!select || !hint) {
+            return;
+        }
+        const option = select.options[select.selectedIndex];
+        hint.textContent = option?.dataset?.hint || '';
+        if (otroWrap) {
+            otroWrap.hidden = select.value !== 'otro';
+        }
     }
 
     function syncInstitucionNombre() {
@@ -167,6 +240,11 @@ function initWizard() {
     cards.forEach((card) => {
         card.addEventListener('click', () => selectTipo(card.dataset.tipo, card));
     });
+
+    document.getElementById('motivo-permiso-select')?.addEventListener('change', syncPermisoMotivoUi);
+    document.getElementById('motivo-atraso-select')?.addEventListener('change', syncJustificacionMotivoUi);
+    document.getElementById('tipo-marcacion-omitida-select')?.addEventListener('change', syncFaltaMarcadoUi);
+    document.getElementById('motivo-falta-registro-select')?.addEventListener('change', syncFaltaMarcadoUi);
     continueBtn?.addEventListener('click', () => {
         if (tipoInput.value) setStep(1);
     });
@@ -209,6 +287,90 @@ function initRechazoModal() {
     });
 }
 
+function initUserAdminModals() {
+    if (window.__SAVA_USER_ADMIN_MODALS) {
+        return;
+    }
+
+    const modal = document.querySelector('[data-user-admin-modal]');
+    if (!modal) {
+        return;
+    }
+
+    const titleEl = modal.querySelector('[data-user-admin-modal-title]');
+    const subtitleEl = modal.querySelector('[data-user-admin-modal-subtitle]');
+    const bodyEl = modal.querySelector('[data-user-admin-modal-body]');
+
+    function closeModal() {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        bodyEl?.replaceChildren();
+    }
+
+    function openModal(templateEl) {
+        if (!titleEl || !bodyEl || !templateEl?.content) {
+            return;
+        }
+
+        titleEl.textContent = templateEl.dataset.modalTitle || 'Acción';
+        const subtitle = templateEl.dataset.modalSubtitle || '';
+        if (subtitleEl) {
+            subtitleEl.textContent = subtitle;
+            subtitleEl.hidden = subtitle === '';
+        }
+
+        bodyEl.replaceChildren();
+        bodyEl.appendChild(templateEl.content.cloneNode(true));
+
+        const form = bodyEl.querySelector('form');
+        form?.addEventListener('submit', () => {
+            showLoading(form.getAttribute('data-loading-label') || 'Procesando…');
+        }, { once: true });
+
+        modal.hidden = false;
+        modal.removeAttribute('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        bodyEl.querySelector('select, button, input, textarea')?.focus();
+    }
+
+    document.addEventListener('change', (event) => {
+        const picker = event.target.closest('[data-user-action-picker]');
+        if (!picker) {
+            return;
+        }
+
+        const action = picker.value;
+        if (!action) {
+            return;
+        }
+
+        const userId = picker.getAttribute('data-user-id');
+        const templateKey = `${userId}-${action}`;
+        const templateEl = document.querySelector(`template[data-user-admin-template="${templateKey}"]`);
+
+        picker.value = '';
+
+        if (!templateEl) {
+            return;
+        }
+
+        openModal(templateEl);
+    });
+
+    modal.addEventListener('click', (event) => {
+        if (event.target.closest('[data-user-admin-modal-close]')) {
+            event.preventDefault();
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !modal.hidden) {
+            closeModal();
+        }
+    });
+}
+
 function initDocViewers() {
     document.querySelectorAll('[data-doc-print]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -227,4 +389,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initWizard();
     initDocViewers();
     initRechazoModal();
+    initUserAdminModals();
 });

@@ -9,7 +9,7 @@
 
     <p class="cuerpo">
         Yo, <strong>{{ $nombreCompleto }}</strong>, portador de la cédula de identidad N° <strong>{{ $cedula }}</strong>,
-        docente de la carrera de <strong>{{ $carrera }}</strong> de la {{ $facultadNombre }}, por medio del presente documento
+        {{ strtolower($rolPersonal) }} de la carrera de <strong>{{ $carrera }}</strong> de la {{ $facultadNombre }}, por medio del presente documento
         justifico la falta o inconsistencia en mi marcación de asistencia mediante el sistema de reconocimiento facial (Face ID),
         conforme a los siguientes datos:
     </p>
@@ -20,11 +20,12 @@
         <p>Tipo de marcación omitida/fallida: {{ $tipoMarcacion }}</p>
         <p>Hora real de ingreso: {{ $horaIngreso }}</p>
         <p>Hora real de salida: {{ $horaSalida }}</p>
-        <p>Motivo de la falta de registro: {{ $motivoFaltaRegistro }}</p>
-        @if(filled($descripcionComplementaria))
-            <p>Descripción complementaria: {{ $descripcionComplementaria }}</p>
-        @endif
+        <p>Motivo: {{ $motivoFaltaRegistro }}</p>
     </div>
+
+    @if(filled($observacionesAdicionales))
+        <p class="cuerpo">Observaciones adicionales: {{ $observacionesAdicionales }}</p>
+    @endif
 
     <p class="cuerpo">
         Declaro bajo mi compromiso académico que la información consignada es verídica y que en el horario indicado me encontraba

@@ -7,11 +7,14 @@
         'usuario_existe' => 'Este correo ya está registrado. Inicia sesión con Office 365.',
         'solicitud_pendiente' => 'Ya existe una solicitud pendiente para este correo.',
         'datos_incompletos' => 'Completa todos los campos obligatorios.',
-        'cedula_invalida' => 'La cédula debe tener entre 10 y 13 dígitos.',
+        'cedula_letras' => 'La cédula solo debe contener números (sin letras).',
+        'cedula_formato' => 'La cédula ecuatoriana debe tener exactamente 10 dígitos.',
+        'cedula_invalida' => 'La cédula no es válida. Verifica que sea tu número de identidad real.',
         'celular_invalido' => 'Indica un celular válido (mínimo 9 dígitos).',
         'carrera_invalida' => 'Selecciona una carrera válida.',
         'rol_invalido' => 'Selecciona un rol válido.',
         'correo_invalido' => 'Indica un correo electrónico válido.',
+        'correo_no_institucional' => 'Use su correo institucional ULEAM. No se aceptan correos temporales.',
     ];
     $mensaje = $mensajes[$aviso ?? ''] ?? null;
 @endphp
@@ -28,7 +31,7 @@
         <div class="card stack" style="width: 100%; max-width: 760px;">
             <div>
                 <h2 style="margin: 0; font-size: 1.35rem;">Datos de la solicitud</h2>
-                <p class="field-hint" style="margin: 0.4rem 0 0;">Usa tu correo institucional.</p>
+                <p class="field-hint" style="margin: 0.4rem 0 0;">Usa tu correo institucional (@uleam.edu.ec o @live.uleam.edu.ec).</p>
             </div>
 
             <p class="field-hint">
@@ -39,28 +42,43 @@
                 <div class="alert alert--error" role="alert">{{ $mensaje }}</div>
             @endif
 
-            <form method="POST" action="{{ route('solicitar-cuenta.store') }}" class="stack">
+            <form method="POST" action="{{ route('solicitar-cuenta.store') }}" class="stack" id="solicitar-cuenta-form">
                 @csrf
                 <div class="form-grid">
                     <label class="field">
                         <span class="field__label">Nombres *</span>
-                        <input type="text" name="nombres" required class="field__input" value="{{ old('nombres') }}">
+                        <input type="text" name="nombres" required class="field__input" value="{{ old('nombres') }}" autocomplete="given-name">
                     </label>
                     <label class="field">
                         <span class="field__label">Apellidos *</span>
-                        <input type="text" name="apellidos" required class="field__input" value="{{ old('apellidos') }}">
+                        <input type="text" name="apellidos" required class="field__input" value="{{ old('apellidos') }}" autocomplete="family-name">
                     </label>
                     <label class="field">
-                        <span class="field__label">Cédula *</span>
-                        <input type="text" name="cedula" required class="field__input" value="{{ old('cedula') }}">
+                        <span class="field__label">Cédula de identidad *</span>
+                        <input
+                            type="text"
+                            name="cedula"
+                            id="cedula-input"
+                            required
+                            class="field__input"
+                            value="{{ old('cedula') }}"
+                            inputmode="numeric"
+                            maxlength="10"
+                            pattern="\d{10}"
+                            autocomplete="off"
+                            aria-describedby="cedula-hint"
+                        >
+                        <p class="field-hint" id="cedula-hint" style="margin: 0.35rem 0 0;">
+                            10 dígitos numéricos (cédula ecuatoriana). Ejemplo: 1315591303. No use letras ni números repetidos ficticios.
+                        </p>
                     </label>
                     <label class="field">
                         <span class="field__label">Celular *</span>
-                        <input type="text" name="celular" required class="field__input" value="{{ old('celular') }}">
+                        <input type="tel" name="celular" required class="field__input" value="{{ old('celular') }}" inputmode="tel" autocomplete="tel">
                     </label>
                     <label class="field field--full">
                         <span class="field__label">Correo institucional *</span>
-                        <input type="email" name="email" required class="field__input" value="{{ old('email') }}">
+                        <input type="email" name="email" required class="field__input" value="{{ old('email') }}" autocomplete="email" placeholder="nombre@uleam.edu.ec">
                     </label>
                     <label class="field">
                         <span class="field__label">Carrera *</span>
@@ -92,4 +110,24 @@
         </div>
     </div>
 </div>
+<script>
+    (function () {
+        const input = document.getElementById('cedula-input');
+        if (!input) {
+            return;
+        }
+
+        const sanitize = () => {
+            const hadLetters = /[a-zA-Z]/.test(input.value);
+            const digits = input.value.replace(/\D/g, '').slice(0, 10);
+            if (input.value !== digits) {
+                input.value = digits;
+            }
+            input.setCustomValidity(hadLetters ? 'La cédula no puede contener letras.' : '');
+        };
+
+        input.addEventListener('input', sanitize);
+        input.addEventListener('blur', sanitize);
+    })();
+</script>
 @endsection

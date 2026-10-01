@@ -19,7 +19,7 @@ enum AppRole: string
             self::Secretaria => 'Secretaría',
             self::Administrativo => 'Administrativo',
             self::Docente => 'Docente',
-            self::Mantenimiento => 'Mantenimiento',
+            self::Mantenimiento => 'Código de trabajo',
         };
     }
 

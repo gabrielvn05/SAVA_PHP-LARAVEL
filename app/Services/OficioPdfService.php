@@ -71,7 +71,7 @@ class OficioPdfService
         }
     }
 
-    public const PLANTILLA_VERSION = '2026-09-17b';
+    public const PLANTILLA_VERSION = '2026-09-17e';
 
     private function cachePath(Solicitud $solicitud): string
     {

@@ -32,6 +32,10 @@
         @endif
     </div>
 
+    @if(filled($observacionesAdicionales))
+        <p class="cuerpo">Observaciones adicionales: {{ $observacionesAdicionales }}</p>
+    @endif
+
     <p class="cuerpo">
         Declaro bajo mi compromiso académico que la información aquí consignada es verídica. Me comprometo a reincorporarme a mis labores
         en la fecha de retorno indicada, así como a presentar al Decanato un informe de las actividades realizadas (incluyendo constancias,

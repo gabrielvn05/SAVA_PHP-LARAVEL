@@ -41,7 +41,7 @@ class OficioDatosService
             '[facultad]' => self::FACULTAD_NOMBRE,
             '[Facultad]' => self::FACULTAD_ETIQUETA,
             '[Cédula]' => (string) ($detalle['cedula'] ?? $creador->cedula ?? '—'),
-            '[Fecha automática del sistema]' => now()->format('d/m/Y'),
+            '[Fecha automática del sistema]' => now()->translatedFormat('d \d\e F \d\e Y'),
             '[Fecha de inicio de la falta]' => $fechaInicio,
             '[Fecha de retorno a clases]' => $fechaFin,
             '[Número de días]' => $numeroDias,
@@ -51,10 +51,10 @@ class OficioDatosService
             SolicitudTipo::FaltaMarcado => [
                 '[Fecha del incidente]' => $this->formatFecha($detalle['fecha_incidente'] ?? $solicitud->fecha_inicio),
                 '[Tipo de marcación omitida/fallida]' => OficioEtiquetas::tipoMarcacion($detalle['tipo_marcacion_omitida'] ?? null),
-                '[Hora real de ingreso]' => (string) ($detalle['hora_real_ingreso'] ?? '—'),
-                '[Hora real de salida]' => (string) ($detalle['hora_real_salida'] ?? '—'),
-                '[Motivo de la falta de registro]' => OficioEtiquetas::motivoFaltaRegistro($detalle['motivo_falta_registro'] ?? null),
-                '[Descripción complementaria]' => (string) ($detalle['descripcion_complementaria'] ?? '—'),
+                '[Hora real de ingreso]' => \App\Support\SolicitudFaltaMarcadoRules::formatHora($detalle['hora_real_ingreso'] ?? null),
+                '[Hora real de salida]' => \App\Support\SolicitudFaltaMarcadoRules::formatHora($detalle['hora_real_salida'] ?? null),
+                '[Motivo de la falta de registro]' => $solicitud->motivo ?: OficioEtiquetas::motivoFaltaRegistro($detalle['motivo_falta_registro'] ?? null),
+                '[Descripción complementaria]' => '—',
             ],
             SolicitudTipo::CalamidadDomestica => [
                 '[Tipo de calamidad]' => OficioEtiquetas::tipoCalamidad($detalle['tipo_calamidad'] ?? null),

@@ -22,11 +22,13 @@ class SolicitudStoreTest extends TestCase
             'celular' => '0991234567',
         ]);
 
+        $fecha = now()->toDateString();
         $response = $this->actingAs($user)->post(route('solicitudes.store'), [
             'tipo' => SolicitudTipo::Permiso->value,
-            'fecha_inicio' => now()->toDateString(),
-            'fecha_fin' => now()->addDay()->toDateString(),
-            'motivo' => 'Permiso académico de prueba',
+            'fecha_permiso' => $fecha,
+            'hora_inicio_permiso' => '08:00',
+            'hora_fin_permiso' => '10:00',
+            'motivo_permiso' => 'reunion',
         ]);
 
         $solicitud = Solicitud::query()->first();
@@ -56,11 +58,13 @@ class SolicitudStoreTest extends TestCase
             'celular' => '0987654321',
         ]);
 
+        $fecha = now()->toDateString();
         $this->actingAs($owner)->post(route('solicitudes.store'), [
             'tipo' => SolicitudTipo::Permiso->value,
-            'fecha_inicio' => now()->toDateString(),
-            'fecha_fin' => now()->addDay()->toDateString(),
-            'motivo' => 'Permiso académico de prueba',
+            'fecha_permiso' => $fecha,
+            'hora_inicio_permiso' => '08:00',
+            'hora_fin_permiso' => '10:00',
+            'motivo_permiso' => 'reunion',
         ]);
 
         $solicitud = Solicitud::query()->first();

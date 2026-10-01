@@ -61,6 +61,14 @@ class OficioDocxTest extends TestCase
         $this->assertStringContainsString('desde el 15 hasta el 20 de septiembre de 2026', $xml);
         $this->assertStringNotContainsString('[Nombre completo del docente]', $xml);
         $this->assertStringNotContainsString('____', $xml);
+        $this->assertStringContainsString('Fecha de generación del documento', $xml);
+
+        if (preg_match('/<w:tbl\b[^>]*>(?:(?!<\/w:tbl>).)*Aprobado por:(?:(?!<\/w:tbl>).)*<\/w:tbl>/su', $xml, $firma)) {
+            $this->assertStringNotContainsString('<w:jc w:val="both"/>', $firma[0]);
+            $this->assertStringContainsString('Correo Institucional:', $firma[0]);
+        } else {
+            $this->fail('No se encontró la tabla de firma en el DOCX generado.');
+        }
     }
 
     public function test_ruta_descarga_oficio_docx(): void

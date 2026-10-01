@@ -68,7 +68,10 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
     Route::get('/admin/usuarios', [UsuarioController::class, 'index'])->name('admin.usuarios.index');
     Route::post('/admin/usuarios', [UsuarioController::class, 'store'])->name('admin.usuarios.store');
-    Route::patch('/admin/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('admin.usuarios.update');
+    Route::patch('/admin/usuarios/{usuario}/rol', [UsuarioController::class, 'updateRol'])->name('admin.usuarios.rol');
+    Route::patch('/admin/usuarios/{usuario}/estado', [UsuarioController::class, 'updateEstado'])->name('admin.usuarios.estado');
+    Route::post('/admin/usuarios/{usuario}/reset-clave', [UsuarioController::class, 'resetClave'])->name('admin.usuarios.reset-clave');
+    Route::post('/admin/usuarios/importar-csv', [UsuarioController::class, 'importCsv'])->name('admin.usuarios.import-csv');
     Route::post('/admin/usuarios/{usuario}/delegar', [UsuarioController::class, 'delegate'])
         ->name('admin.usuarios.delegate');
 

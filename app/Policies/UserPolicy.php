@@ -27,4 +27,14 @@ class UserPolicy
     {
         return $user->rol === AppRole::Superusuario;
     }
+
+    public function resetPassword(User $user, User $model): bool
+    {
+        return $user->rol === AppRole::Superusuario;
+    }
+
+    public function importCsv(User $user): bool
+    {
+        return $user->rol === AppRole::Superusuario;
+    }
 }

@@ -8,13 +8,21 @@ class TemporaryPasswordGenerator
 
     public static function generate(int $length = 12): string
     {
-        $password = '';
+        $length = max(8, $length);
         $max = strlen(self::ALPHABET) - 1;
+        $chars = [];
 
-        for ($i = 0; $i < $length; $i++) {
-            $password .= self::ALPHABET[random_int(0, $max)];
+        $chars[] = 'ABCDEFGHJKLMNPQRSTUVWXYZ'[random_int(0, 23)];
+        $chars[] = 'abcdefghijkmnopqrstuvwxyz'[random_int(0, 23)];
+        $chars[] = '23456789'[random_int(0, 7)];
+        $chars[] = '@#$%'[random_int(0, 3)];
+
+        for ($i = count($chars); $i < $length; $i++) {
+            $chars[] = self::ALPHABET[random_int(0, $max)];
         }
 
-        return $password;
+        shuffle($chars);
+
+        return implode('', $chars);
     }
 }

@@ -99,14 +99,90 @@
                 </div>
             </div>
 
-            <div class="form-grid form-grid--2 wizard-field wizard-field--permiso" hidden>
+            <div class="wizard-field wizard-field--permiso" hidden>
+                <hr style="border: 0; border-top: 1px solid var(--color-border);">
+                <h3 style="margin: 0;">Datos del permiso</h3>
+                <p class="field-hint" style="margin: 0 0 0.75rem;">Corresponde a un solo día o jornada laboral.</p>
                 <div>
-                    <label>Hora inicio</label>
-                    <input type="time" name="hora_inicio" value="{{ old('hora_inicio') }}">
+                    <label>Fecha del permiso *</label>
+                    <input type="date" name="fecha_permiso" min="{{ $minFecha }}" value="{{ old('fecha_permiso') }}">
                 </div>
+                <div class="form-grid form-grid--2" style="margin-top: 0.75rem;">
+                    <div>
+                        <label>Hora de inicio de falta *</label>
+                        <input type="time" name="hora_inicio_permiso" value="{{ old('hora_inicio_permiso') }}">
+                    </div>
+                    <div>
+                        <label>Hora de fin de falta *</label>
+                        <input type="time" name="hora_fin_permiso" value="{{ old('hora_fin_permiso') }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-field wizard-field--justificacion-atraso" hidden>
+                <hr style="border: 0; border-top: 1px solid var(--color-border);">
+                <h3 style="margin: 0;">Justificación por atraso</h3>
+                <p class="field-hint" style="margin: 0 0 0.75rem;">Solo puede registrarse el atraso de la jornada de hoy.</p>
                 <div>
-                    <label>Hora fin</label>
-                    <input type="time" name="hora_fin" value="{{ old('hora_fin') }}">
+                    <label>Fecha del atraso *</label>
+                    <input
+                        type="date"
+                        name="fecha_atraso"
+                        min="{{ $fechaHoy }}"
+                        max="{{ $fechaHoy }}"
+                        value="{{ old('fecha_atraso', $fechaHoy) }}"
+                        readonly
+                    >
+                </div>
+                <div class="form-grid form-grid--2" style="margin-top: 0.75rem;">
+                    <div>
+                        <label>Hora establecida de llegada *</label>
+                        <input type="time" name="hora_llegada_establecida" value="{{ old('hora_llegada_establecida') }}">
+                        <p class="field-hint">Horario oficial de inicio de jornada.</p>
+                    </div>
+                    <div>
+                        <label>Hora real de llegada *</label>
+                        <input type="time" name="hora_llegada_real" value="{{ old('hora_llegada_real') }}">
+                        <p class="field-hint">Debe ser posterior a la hora establecida.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-field wizard-field--justificacion-motivo" hidden>
+                <div>
+                    <label>Motivo del atraso *</label>
+                    <select name="motivo_atraso" id="motivo-atraso-select">
+                        <option value="">Seleccionar</option>
+                        @foreach(\App\Enums\JustificacionAtrasoMotivo::cases() as $motivoAtraso)
+                            <option
+                                value="{{ $motivoAtraso->value }}"
+                                data-hint="{{ $motivoAtraso->hint() }}"
+                                @selected(old('motivo_atraso') === $motivoAtraso->value)
+                            >{{ $motivoAtraso->label() }}</option>
+                        @endforeach
+                    </select>
+                    <p class="field-hint" id="motivo-atraso-hint" style="margin: 0.35rem 0 0;"></p>
+                </div>
+            </div>
+
+            <div class="wizard-field wizard-field--permiso-motivo" hidden>
+                <div>
+                    <label>Motivo *</label>
+                    <select name="motivo_permiso" id="motivo-permiso-select">
+                        <option value="">Seleccionar</option>
+                        @foreach(\App\Enums\PermisoMotivo::cases() as $motivoPermiso)
+                            <option
+                                value="{{ $motivoPermiso->value }}"
+                                data-hint="{{ $motivoPermiso->hint() }}"
+                                @selected(old('motivo_permiso') === $motivoPermiso->value)
+                            >{{ $motivoPermiso->label() }}</option>
+                        @endforeach
+                    </select>
+                    <p class="field-hint" id="motivo-permiso-hint" style="margin: 0.35rem 0 0;"></p>
+                </div>
+                <div class="wizard-field wizard-field--permiso-motivo-otro" hidden style="margin-top: 0.75rem;">
+                    <label>Especifique el motivo *</label>
+                    <input type="text" name="motivo_permiso_otro" value="{{ old('motivo_permiso_otro') }}" maxlength="500">
                 </div>
             </div>
 
@@ -158,6 +234,65 @@
                     <div>
                         <label>Fecha de retorno *</label>
                         <input type="date" name="fecha_fin_viaje" min="{{ $minFecha }}" value="{{ old('fecha_fin_viaje') }}">
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                    <p class="field-hint" style="margin: 0 0 0.5rem; font-weight: 600; color: var(--color-text);">
+                        Fechas del evento o actividad *
+                    </p>
+                    <div class="form-grid form-grid--2" style="gap: 0.75rem 1rem;">
+                        <div>
+                            <span class="field-hint">Inicio del evento</span>
+                            <div class="form-grid form-grid--3" style="margin-top: 0.35rem; grid-template-columns: 1fr 1.4fr 1fr;">
+                                <div>
+                                    <label class="field-hint">Día</label>
+                                    <input type="number" name="evento_inicio_dia" min="1" max="31" inputmode="numeric"
+                                        value="{{ old('evento_inicio_dia') }}" placeholder="15">
+                                </div>
+                                <div>
+                                    <label class="field-hint">Mes</label>
+                                    <select name="evento_inicio_mes">
+                                        <option value="">Mes</option>
+                                        @for($m = 1; $m <= 12; $m++)
+                                            <option value="{{ $m }}" @selected((int) old('evento_inicio_mes') === $m)>
+                                                {{ \App\Support\SolicitudViajeRules::mesLabel($m) }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="field-hint">Año</label>
+                                    <input type="number" name="evento_inicio_anio" min="2000" max="2100" inputmode="numeric"
+                                        value="{{ old('evento_inicio_anio', now()->year) }}" placeholder="{{ now()->year }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="field-hint">Fin del evento</span>
+                            <div class="form-grid form-grid--3" style="margin-top: 0.35rem; grid-template-columns: 1fr 1.4fr 1fr;">
+                                <div>
+                                    <label class="field-hint">Día</label>
+                                    <input type="number" name="evento_fin_dia" min="1" max="31" inputmode="numeric"
+                                        value="{{ old('evento_fin_dia') }}" placeholder="20">
+                                </div>
+                                <div>
+                                    <label class="field-hint">Mes</label>
+                                    <select name="evento_fin_mes">
+                                        <option value="">Mes</option>
+                                        @for($m = 1; $m <= 12; $m++)
+                                            <option value="{{ $m }}" @selected((int) old('evento_fin_mes') === $m)>
+                                                {{ \App\Support\SolicitudViajeRules::mesLabel($m) }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="field-hint">Año</label>
+                                    <input type="number" name="evento_fin_anio" min="2000" max="2100" inputmode="numeric"
+                                        value="{{ old('evento_fin_anio', now()->year) }}" placeholder="{{ now()->year }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -243,33 +378,39 @@
                 </div>
                 <div>
                     <label>Tipo de marcación omitida/fallida *</label>
-                    <select name="tipo_marcacion_omitida">
+                    <select name="tipo_marcacion_omitida" id="tipo-marcacion-omitida-select">
                         <option value="">Seleccionar</option>
                         <option value="entrada" @selected(old('tipo_marcacion_omitida') === 'entrada')>Marcación de entrada</option>
                         <option value="salida" @selected(old('tipo_marcacion_omitida') === 'salida')>Marcación de salida</option>
+                        <option value="entrada_salida" @selected(old('tipo_marcacion_omitida') === 'entrada_salida')>Entrada y salida</option>
                     </select>
                 </div>
                 <div class="form-grid form-grid--2">
-                    <div>
+                    <div class="wizard-falta-hora--ingreso">
                         <label>Hora real de ingreso *</label>
                         <input type="time" name="hora_real_ingreso" value="{{ old('hora_real_ingreso') }}">
                     </div>
-                    <div>
+                    <div class="wizard-falta-hora--salida">
                         <label>Hora real de salida *</label>
                         <input type="time" name="hora_real_salida" value="{{ old('hora_real_salida') }}">
                     </div>
                 </div>
+            </div>
+
+            <div class="wizard-field wizard-field--falta-motivo" hidden>
                 <div>
-                    <label>Motivo de la falta de registro *</label>
-                    <select name="motivo_falta_registro">
+                    <label>Motivo *</label>
+                    <select name="motivo_falta_registro" id="motivo-falta-registro-select">
                         <option value="">Seleccionar</option>
-                        <option value="olvido_docente" @selected(old('motivo_falta_registro') === 'olvido_docente')>Olvido del docente</option>
-                        <option value="falla_face_id" @selected(old('motivo_falta_registro') === 'falla_face_id')>Falla técnica del sistema Face ID</option>
+                        @foreach(\App\Enums\FaltaMarcadoMotivo::cases() as $motivoFalta)
+                            <option
+                                value="{{ $motivoFalta->value }}"
+                                data-hint="{{ $motivoFalta->hint() }}"
+                                @selected(old('motivo_falta_registro') === $motivoFalta->value)
+                            >{{ $motivoFalta->label() }}</option>
+                        @endforeach
                     </select>
-                </div>
-                <div>
-                    <label>Descripción complementaria (opcional)</label>
-                    <textarea name="descripcion_complementaria" rows="3">{{ old('descripcion_complementaria') }}</textarea>
+                    <p class="field-hint" id="motivo-falta-registro-hint" style="margin: 0.35rem 0 0;"></p>
                 </div>
             </div>
 
@@ -279,7 +420,7 @@
                 <p class="field-hint">En trámites guiados se genera automáticamente si lo dejas vacío.</p>
             </div>
 
-            <div>
+            <div class="wizard-field wizard-field--observaciones">
                 <label>Observaciones adicionales</label>
                 <textarea name="observaciones" rows="3">{{ old('observaciones') }}</textarea>
             </div>
@@ -292,7 +433,7 @@
             <div>
                 <label id="anexo-label">Adjuntar documento de respaldo</label>
                 <input type="file" name="justificativo" accept=".pdf,.png,.jpg,.jpeg">
-                <p class="field-hint">PDF, PNG o JPG. Puede agregar anexos extra a continuación.</p>
+                <p class="field-hint">PDF, PNG o JPG. Peso total máximo de todos los archivos: 20 MB.</p>
             </div>
             <div>
                 <label>Anexos adicionales</label>

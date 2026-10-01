@@ -171,6 +171,12 @@ class SolicitudProcesoTest extends TestCase
         $this->assertSame('Fuera de plazo institucional.', $solicitud->observaciones_decano);
         $this->assertSame($decano->id, $solicitud->firmado_por);
         $this->assertNotNull($solicitud->fecha_firma);
+
+        $this->actingAs($solicitante)
+            ->get(route('solicitudes.show', $solicitud))
+            ->assertOk()
+            ->assertSee($decano->nombreCompleto(), false)
+            ->assertSee('Fuera de plazo institucional.', false);
     }
 
     public function test_secretaria_then_decano_complete_the_full_approval_pipeline(): void

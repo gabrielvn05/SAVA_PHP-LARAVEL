@@ -79,6 +79,7 @@ class SolicitudController extends Controller
             'tipos' => SolicitudTipo::cases(),
             'user' => auth()->user(),
             'minFecha' => now()->subMonths(3)->toDateString(),
+            'fechaHoy' => now()->toDateString(),
         ]);
     }
 
@@ -92,6 +93,10 @@ class SolicitudController extends Controller
             return back()->withInput()->with('error', $error);
         }
 
+        if (\App\Support\SolicitudAdjuntoLimits::exceedsTotalLimit($request)) {
+            return back()->withInput()->with('error', \App\Support\SolicitudAdjuntoLimits::totalLimitMessage());
+        }
+
         $validated = $request->validate([
             'tipo' => 'required|string',
             'fecha_inicio' => 'nullable|date',
@@ -103,9 +108,24 @@ class SolicitudController extends Controller
             'jornada' => 'nullable|string|max:60',
             'hora_inicio' => 'nullable|string|max:10',
             'hora_fin' => 'nullable|string|max:10',
+            'fecha_permiso' => 'nullable|date',
+            'hora_inicio_permiso' => 'nullable|string|max:10',
+            'hora_fin_permiso' => 'nullable|string|max:10',
+            'motivo_permiso' => 'nullable|string|max:80',
+            'motivo_permiso_otro' => 'nullable|string|max:500',
+            'fecha_atraso' => 'nullable|date',
+            'hora_llegada_establecida' => 'nullable|string|max:10',
+            'hora_llegada_real' => 'nullable|string|max:10',
+            'motivo_atraso' => 'nullable|string|max:80',
             'fecha_inasistencia' => 'nullable|date',
             'fecha_inicio_viaje' => 'nullable|date',
             'fecha_fin_viaje' => 'nullable|date',
+            'evento_inicio_dia' => 'nullable|integer|min:1|max:31',
+            'evento_inicio_mes' => 'nullable|integer|min:1|max:12',
+            'evento_inicio_anio' => 'nullable|integer|min:2000|max:2100',
+            'evento_fin_dia' => 'nullable|integer|min:1|max:31',
+            'evento_fin_mes' => 'nullable|integer|min:1|max:12',
+            'evento_fin_anio' => 'nullable|integer|min:2000|max:2100',
             'fecha_incidente' => 'nullable|date',
             'institucion_medica_tipo' => 'nullable|string|max:120',
             'institucion_medica_nombre' => 'nullable|string|max:255',
@@ -128,18 +148,57 @@ class SolicitudController extends Controller
             'hora_real_ingreso' => 'nullable|string|max:10',
             'hora_real_salida' => 'nullable|string|max:10',
             'motivo_falta_registro' => 'nullable|string|max:80',
-            'descripcion_complementaria' => 'nullable|string|max:5000',
         ]);
 
         $tipo = $validated['tipo'];
-        $fechaInicio = $validated['fecha_inicio']
-            ?? $validated['fecha_inasistencia']
-            ?? $validated['fecha_inicio_viaje']
-            ?? $validated['fecha_incidente']
-            ?? null;
-        $fechaFin = $validated['fecha_fin']
-            ?? $validated['fecha_fin_viaje']
-            ?? $fechaInicio;
+        $detalleExtraPorTipo = [];
+
+        if ($tipo === SolicitudTipo::Permiso->value) {
+            $permiso = \App\Support\SolicitudPermisoRules::resolve($validated);
+            if (isset($permiso['error'])) {
+                return back()->withInput()->with('error', $permiso['error']);
+            }
+            $fechaInicio = $permiso['fecha_inicio'];
+            $fechaFin = $permiso['fecha_fin'];
+            $motivo = $permiso['motivo'];
+            $detalleExtraPorTipo = $permiso['detalle_extra'];
+        } elseif ($tipo === SolicitudTipo::Justificacion->value) {
+            $justificacion = \App\Support\SolicitudJustificacionAtrasoRules::resolve($validated);
+            if (isset($justificacion['error'])) {
+                return back()->withInput()->with('error', $justificacion['error']);
+            }
+            $fechaInicio = $justificacion['fecha_inicio'];
+            $fechaFin = $justificacion['fecha_fin'];
+            $motivo = $justificacion['motivo'];
+            $detalleExtraPorTipo = $justificacion['detalle_extra'];
+        } elseif ($tipo === SolicitudTipo::FaltaMarcado->value) {
+            $faltaMarcado = \App\Support\SolicitudFaltaMarcadoRules::resolve($validated);
+            if (isset($faltaMarcado['error'])) {
+                return back()->withInput()->with('error', $faltaMarcado['error']);
+            }
+            $fechaInicio = $faltaMarcado['fecha_inicio'];
+            $fechaFin = $faltaMarcado['fecha_fin'];
+            $motivo = $faltaMarcado['motivo'];
+            $detalleExtraPorTipo = $faltaMarcado['detalle_extra'];
+        } elseif ($tipo === SolicitudTipo::Viaje->value) {
+            $viaje = \App\Support\SolicitudViajeRules::resolve($validated);
+            if (isset($viaje['error'])) {
+                return back()->withInput()->with('error', $viaje['error']);
+            }
+            $fechaInicio = $viaje['fecha_inicio'];
+            $fechaFin = $viaje['fecha_fin'];
+            $motivo = $viaje['motivo'];
+            $detalleExtraPorTipo = $viaje['detalle_extra'];
+        } else {
+            $fechaInicio = $validated['fecha_inicio']
+                ?? $validated['fecha_inasistencia']
+                ?? $validated['fecha_inicio_viaje']
+                ?? $validated['fecha_incidente']
+                ?? null;
+            $fechaFin = $validated['fecha_fin']
+                ?? $validated['fecha_fin_viaje']
+                ?? $fechaInicio;
+        }
 
         if ($tipo === SolicitudTipo::Enfermedad->value && filled($validated['dias_reposo'] ?? null) && $fechaInicio) {
             $dias = max(0, (int) $validated['dias_reposo']);
@@ -156,23 +215,30 @@ class SolicitudController extends Controller
             return back()->withInput()->with('error', 'Las fechas del periodo no son válidas.');
         }
 
-        $motivo = trim((string) ($validated['motivo'] ?? ''));
-        if ($motivo === '') {
-            $motivo = match ($tipo) {
-                SolicitudTipo::Enfermedad->value => 'Certificado médico: '.($validated['diagnostico'] ?? ''),
-                SolicitudTipo::Viaje->value => 'Permiso por viaje: '.($validated['nombre_evento'] ?? ''),
-                SolicitudTipo::CalamidadDomestica->value => 'Calamidad doméstica',
-                SolicitudTipo::FaltaMarcado->value => 'Reporte de novedad en marcación',
-                default => '',
-            };
+        if (! in_array($tipo, [
+            SolicitudTipo::Permiso->value,
+            SolicitudTipo::Justificacion->value,
+            SolicitudTipo::FaltaMarcado->value,
+            SolicitudTipo::Viaje->value,
+        ], true)) {
+            $motivo = trim((string) ($validated['motivo'] ?? ''));
+            if ($motivo === '') {
+                $motivo = match ($tipo) {
+                    SolicitudTipo::Enfermedad->value => 'Certificado médico: '.($validated['diagnostico'] ?? ''),
+                    SolicitudTipo::CalamidadDomestica->value => 'Calamidad doméstica',
+                    default => '',
+                };
+            }
+
+            if ($motivo === '') {
+                return back()->withInput()->with('error', 'Completa el motivo del trámite.');
+            }
         }
 
-        if ($motivo === '') {
-            return back()->withInput()->with('error', 'Completa el motivo del trámite.');
-        }
-
-        if ($error = SolicitudValidator::validateFechaInicioMaxTresMeses($fechaInicio)) {
-            return back()->withInput()->with('error', $error);
+        if ($tipo !== SolicitudTipo::Justificacion->value) {
+            if ($error = SolicitudValidator::validateFechaInicioMaxTresMeses($fechaInicio)) {
+                return back()->withInput()->with('error', $error);
+            }
         }
 
         if (SolicitudValidator::anexoObligatorioParaTipo($validated['tipo'])
@@ -203,7 +269,7 @@ class SolicitudController extends Controller
             ? 'IESS'
             : ($validated['institucion_medica_nombre'] ?? null);
 
-        $detalle = array_filter([
+        $detalle = array_filter(array_merge([
             'codigo_tramite' => $codigo,
             'tipo_personal' => $user->rol->label(),
             'cedula' => $user->cedula,
@@ -237,11 +303,10 @@ class SolicitudController extends Controller
             'hora_real_ingreso' => $validated['hora_real_ingreso'] ?? null,
             'hora_real_salida' => $validated['hora_real_salida'] ?? null,
             'motivo_falta_registro' => $validated['motivo_falta_registro'] ?? null,
-            'descripcion_complementaria' => $validated['descripcion_complementaria'] ?? null,
             'anexos' => $anexos,
             'anexo_path' => $anexos[0]['path'] ?? null,
             'anexo_nombre' => $anexos[0]['nombre'] ?? null,
-        ], static fn ($value) => $value !== null && $value !== '');
+        ], $detalleExtraPorTipo), static fn ($value) => $value !== null && $value !== '');
 
         if (($validated['tipo'] ?? '') === SolicitudTipo::FaltaMarcado->value && ! empty($validated['jornada'])) {
             $user->update(['jornada' => $validated['jornada']]);
@@ -373,6 +438,10 @@ class SolicitudController extends Controller
 
         if ($error = SolicitudValidator::validateFechaInicioMaxTresMeses($request->input('fecha_inicio', ''))) {
             return back()->withInput()->with('error', $error);
+        }
+
+        if (\App\Support\SolicitudAdjuntoLimits::exceedsTotalLimit($request)) {
+            return back()->withInput()->with('error', \App\Support\SolicitudAdjuntoLimits::totalLimitMessage());
         }
 
         $validated = $request->validate([

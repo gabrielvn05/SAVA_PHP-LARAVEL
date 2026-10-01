@@ -119,13 +119,27 @@
             <h2 class="solicitud-section-title">Observaciones</h2>
             @if($solicitud->observaciones_secretaria)
                 <div>
-                    <p class="field-hint" style="margin: 0;">Secretaría</p>
+                    <p class="field-hint" style="margin: 0;">
+                        @if($solicitud->revisor)
+                            {{ $solicitud->revisor->nombreCompleto() }}
+                            ({{ $solicitud->revisor->rol->label() }})
+                        @else
+                            Secretaría
+                        @endif
+                    </p>
                     <p style="margin: 0.25rem 0 0;">{{ $solicitud->observaciones_secretaria }}</p>
                 </div>
             @endif
             @if($solicitud->observaciones_decano)
                 <div>
-                    <p class="field-hint" style="margin: 0;">Decano</p>
+                    <p class="field-hint" style="margin: 0;">
+                        @if($solicitud->firmante)
+                            {{ $solicitud->firmante->nombreCompleto() }}
+                            ({{ $solicitud->firmante->rol->label() }})
+                        @else
+                            Decano
+                        @endif
+                    </p>
                     <p style="margin: 0.25rem 0 0;">{{ $solicitud->observaciones_decano }}</p>
                 </div>
             @endif

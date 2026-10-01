@@ -32,6 +32,8 @@ class OficioPreviewService
             SolicitudTipo::CalamidadDomestica => 'certificado.oficios.calamidad',
             SolicitudTipo::Enfermedad => 'certificado.oficios.medico',
             SolicitudTipo::Viaje => 'certificado.oficios.viaje',
+            SolicitudTipo::Permiso => 'certificado.oficios.permiso',
+            SolicitudTipo::Justificacion => 'certificado.oficios.justificacion-atraso',
             default => 'certificado.preview',
         };
 
@@ -65,16 +67,7 @@ class OficioPreviewService
     private function extrasHtml(Solicitud $solicitud, array $valores): array
     {
         return match ($solicitud->tipo) {
-            SolicitudTipo::FaltaMarcado => [
-                'fechaIncidente' => $valores['[Fecha del incidente]'],
-                'tipoMarcacion' => $valores['[Tipo de marcación omitida/fallida]'],
-                'horaIngreso' => $valores['[Hora real de ingreso]'],
-                'horaSalida' => $valores['[Hora real de salida]'],
-                'motivoFaltaRegistro' => $valores['[Motivo de la falta de registro]'],
-                'descripcionComplementaria' => $valores['[Descripción complementaria]'] !== '—'
-                    ? $valores['[Descripción complementaria]']
-                    : null,
-            ],
+            SolicitudTipo::FaltaMarcado => self::extrasFaltaMarcado($solicitud, $valores),
             SolicitudTipo::CalamidadDomestica => [
                 'fechaInicio' => $valores['[Fecha de inicio de la falta]'],
                 'fechaFin' => $valores['[Fecha de retorno a clases]'],
@@ -94,18 +87,90 @@ class OficioPreviewService
                 'medicoTratante' => $valores['[Nombre completo del doctor(a)]'],
                 'diagnostico' => $valores['[Diagnóstico principal]'],
             ],
-            SolicitudTipo::Viaje => [
-                'fechaInicio' => $valores['[Fecha de inicio de la falta]'],
-                'fechaFin' => $valores['[Fecha de retorno a clases]'],
-                'numeroDias' => $valores['[Número de días]'],
-                'tipoViaje' => $valores['[Tipo de viaje]'],
-                'nombreEvento' => $valores['[Nombre del evento o institución de estudio]'],
-                'lugarEvento' => $valores['[Lugar (ciudad, país)]'],
-                'fechasEventoActividad' => $valores['[Fechas del evento o actividad]'],
-                'rolEspecifico' => ($valores['[Rol específico]'] ?? '—') !== '—' ? $valores['[Rol específico]'] : null,
-                'objetivoAcademico' => ($valores['[Objetivo académico]'] ?? '—') !== '—' ? $valores['[Objetivo académico]'] : null,
-            ],
+            SolicitudTipo::Viaje => self::extrasViaje($solicitud, $valores),
+            SolicitudTipo::Permiso => self::extrasPermiso($solicitud),
+            SolicitudTipo::Justificacion => self::extrasJustificacionAtraso($solicitud),
             default => [],
         };
+    }
+
+    /**
+     * @param  array<string, string>  $valores
+     * @return array<string, mixed>
+     */
+    private static function extrasViaje(Solicitud $solicitud, array $valores): array
+    {
+        $detalle = $solicitud->detalle ?? [];
+
+        return [
+            'fechaInicio' => $valores['[Fecha de inicio de la falta]'],
+            'fechaFin' => $valores['[Fecha de retorno a clases]'],
+            'numeroDias' => $valores['[Número de días]'],
+            'tipoViaje' => $valores['[Tipo de viaje]'],
+            'nombreEvento' => $valores['[Nombre del evento o institución de estudio]'],
+            'lugarEvento' => $valores['[Lugar (ciudad, país)]'],
+            'fechasEventoActividad' => $valores['[Fechas del evento o actividad]'],
+            'rolEspecifico' => ($valores['[Rol específico]'] ?? '—') !== '—' ? $valores['[Rol específico]'] : null,
+            'objetivoAcademico' => ($valores['[Objetivo académico]'] ?? '—') !== '—' ? $valores['[Objetivo académico]'] : null,
+            'observacionesAdicionales' => $detalle['observaciones'] ?? null,
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $valores
+     * @return array<string, mixed>
+     */
+    private static function extrasFaltaMarcado(Solicitud $solicitud, array $valores): array
+    {
+        $detalle = $solicitud->detalle ?? [];
+
+        return [
+            'fechaIncidente' => $valores['[Fecha del incidente]'],
+            'tipoMarcacion' => $valores['[Tipo de marcación omitida/fallida]'],
+            'horaIngreso' => $valores['[Hora real de ingreso]'],
+            'horaSalida' => $valores['[Hora real de salida]'],
+            'motivoFaltaRegistro' => $valores['[Motivo de la falta de registro]'],
+            'observacionesAdicionales' => $detalle['observaciones'] ?? null,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function extrasPermiso(Solicitud $solicitud): array
+    {
+        $detalle = $solicitud->detalle ?? [];
+        $fecha = $detalle['fecha_permiso'] ?? $solicitud->fecha_inicio?->format('Y-m-d');
+        $fechaFmt = $fecha
+            ? \Carbon\Carbon::parse($fecha)->locale('es')->translatedFormat('d \d\e F \d\e Y')
+            : '—';
+
+        return [
+            'fechaPermiso' => $fechaFmt,
+            'horaInicioFalta' => \App\Support\SolicitudPermisoRules::formatHora((string) ($detalle['hora_inicio_permiso'] ?? '')),
+            'horaFinFalta' => \App\Support\SolicitudPermisoRules::formatHora((string) ($detalle['hora_fin_permiso'] ?? '')),
+            'motivoPermiso' => $solicitud->motivo,
+            'observacionesAdicionales' => $detalle['observaciones'] ?? null,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function extrasJustificacionAtraso(Solicitud $solicitud): array
+    {
+        $detalle = $solicitud->detalle ?? [];
+        $fecha = $detalle['fecha_atraso'] ?? $solicitud->fecha_inicio?->format('Y-m-d');
+        $fechaFmt = $fecha
+            ? \Carbon\Carbon::parse($fecha)->locale('es')->translatedFormat('d \d\e F \d\e Y')
+            : '—';
+
+        return [
+            'fechaAtraso' => $fechaFmt,
+            'horaLlegadaEstablecida' => \App\Support\SolicitudJustificacionAtrasoRules::formatHora(
+                (string) ($detalle['hora_llegada_establecida'] ?? '')
+            ),
+            'horaLlegadaReal' => \App\Support\SolicitudJustificacionAtrasoRules::formatHora(
+                (string) ($detalle['hora_llegada_real'] ?? '')
+            ),
+            'motivoAtraso' => $solicitud->motivo,
+            'observacionesAdicionales' => $detalle['observaciones'] ?? null,
+        ];
     }
 }

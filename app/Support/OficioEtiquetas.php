@@ -40,6 +40,7 @@ class OficioEtiquetas
         return match ($value) {
             'entrada' => 'Marcación de entrada',
             'salida' => 'Marcación de salida',
+            'entrada_salida' => 'Entrada y salida',
             default => $value ?? '—',
         };
     }

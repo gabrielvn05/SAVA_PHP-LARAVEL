@@ -32,9 +32,6 @@ def fix_xml(xml: str) -> str:
         flags=re.DOTALL,
     )
 
-    xml = xml.replace("Fecha de generación del documento", "Generado el")
-    xml = xml.replace("Fecha de generaci\u00f3n del documento", "Generado el")
-
     # Asegurar placeholders de pie de tabla si faltan.
     if "[Fecha automática del sistema]" not in xml and "[Fecha autom" in xml:
         xml = re.sub(

@@ -21,13 +21,12 @@ class UsuarioRolTest extends TestCase
             ->assertOk()
             ->assertSee('Cambiar rol')
             ->assertSee($docente->email)
-            ->assertDontSee('superusuario', false);
+            ->assertDontSee('Superusuario', false);
 
         $this->actingAs($decano)
             ->from(route('admin.usuarios.index'))
-            ->patch(route('admin.usuarios.update', $docente), [
+            ->patch(route('admin.usuarios.rol', $docente), [
                 'rol' => AppRole::Secretaria->value,
-                'activo' => '1',
             ])
             ->assertRedirect(route('admin.usuarios.index'))
             ->assertSessionHas('success');
@@ -41,9 +40,8 @@ class UsuarioRolTest extends TestCase
         $admin = $this->usuario(AppRole::Administrativo, '1313000004');
 
         $this->actingAs($super)
-            ->patch(route('admin.usuarios.update', $admin), [
+            ->patch(route('admin.usuarios.rol', $admin), [
                 'rol' => AppRole::Decano->value,
-                'activo' => '1',
             ])
             ->assertRedirect();
 
@@ -56,18 +54,45 @@ class UsuarioRolTest extends TestCase
         $docente = $this->usuario(AppRole::Docente, '1313000006');
 
         $this->actingAs($decano)
-            ->patch(route('admin.usuarios.update', $docente), [
+            ->patch(route('admin.usuarios.rol', $docente), [
                 'rol' => AppRole::Superusuario->value,
-                'activo' => '1',
             ])
             ->assertSessionHasErrors('rol');
 
         $this->assertSame(AppRole::Docente, $docente->fresh()->rol);
     }
 
+    public function test_cambiar_solo_estado_no_modifica_el_rol(): void
+    {
+        $super = $this->usuario(AppRole::Superusuario, '1313000007');
+        $docente = $this->usuario(AppRole::Docente, '1313000008');
+
+        $this->actingAs($super)
+            ->patch(route('admin.usuarios.estado', $docente), [
+                'activo' => '0',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $fresh = $docente->fresh();
+        $this->assertSame(AppRole::Docente, $fresh->rol);
+        $this->assertFalse($fresh->activo);
+    }
+
+    public function test_superusuario_no_aparece_en_listado_para_decano(): void
+    {
+        $super = $this->usuario(AppRole::Superusuario, '1313000099');
+        $decano = $this->usuario(AppRole::Decano, '1313000009');
+
+        $this->actingAs($decano)
+            ->get(route('admin.usuarios.index'))
+            ->assertOk()
+            ->assertDontSee($super->email, false);
+    }
+
     public function test_secretaria_cannot_manage_users(): void
     {
-        $secretaria = $this->usuario(AppRole::Secretaria, '1313000007');
+        $secretaria = $this->usuario(AppRole::Secretaria, '1313000010');
 
         $this->actingAs($secretaria)
             ->get(route('admin.usuarios.index'))

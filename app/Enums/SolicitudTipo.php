@@ -15,7 +15,7 @@ enum SolicitudTipo: string
     {
         return match ($this) {
             self::Permiso => 'Permiso',
-            self::Justificacion => 'Justificación',
+            self::Justificacion => 'Justificación por atraso',
             self::Viaje => 'Permiso por viaje',
             self::Enfermedad => 'Cita médica / certificado de salud',
             self::CalamidadDomestica => 'Calamidad doméstica',
@@ -26,8 +26,8 @@ enum SolicitudTipo: string
     public function description(): string
     {
         return match ($this) {
-            self::Permiso => 'Permiso de horas o jornada para ausentarse con autorización previa.',
-            self::Justificacion => 'Justificación general de inasistencia o retraso.',
+            self::Permiso => 'Permiso por horas en un solo día (reunión, trámites, prácticas u otros motivos autorizados).',
+            self::Justificacion => 'Justificación del atraso en la jornada del día actual (horario y motivo).',
             self::Viaje => 'Para trámites académicos (congresos, capacitaciones) o personales fuera de la ciudad o país.',
             self::Enfermedad => 'Para justificar ausencia por enfermedad o cita médica (según tu rol: docente, administrativo o mantenimiento).',
             self::CalamidadDomestica => 'Para emergencias o situaciones familiares graves que impidan asistir.',

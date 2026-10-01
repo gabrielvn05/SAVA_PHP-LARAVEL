@@ -23,6 +23,8 @@ class AuthSession
 
         Auth::login($user, $remember);
         $request->session()->regenerate();
+
+        SingleSessionEnforcer::closeOtherSessions($user, $request->session()->getId());
     }
 
     public static function redirectHome(User $user, ?string $success = null): RedirectResponse
